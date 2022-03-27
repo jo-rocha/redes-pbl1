@@ -59,15 +59,15 @@ def handle_tcan(client):
 def handle_truck(client):
     #Finding the trashcan client for the truck to send messages to 
     for i in clients:
-        if i[1] == 'tcan':
-            tcan = i[0]
-            break
-
+        print(i[1])
+        # if i[1] == 'tcan':
+        #     tcan = i[0]
+        #     break
     while True:
         try:
             # Broadcasting Messages
             message = client[0].recv(1024)
-            broadcast(message)
+            broadcast("hello".encode('ascii'))
         except:
             # Removing And Closing Clients
             index = clients.index(client)
