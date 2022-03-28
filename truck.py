@@ -15,7 +15,7 @@ def receive():
             if message == 'ID':
                 client.send(clientID.encode('ascii'))
             else:
-                print(message)
+                print(f'{message}\n\n')
         except:
             print('[ERROR TRUCK!]')
             break
@@ -24,7 +24,7 @@ def write():
     #the message will be the input of the user
     while True:
         # message = '{}'.format(input(''))
-        message = input('[THIS IS THE TRUCK INTERFACE, YOU CAN:]\n [ASK FOR THE STATUS OF THE TRASHCAN: INPUT "status"]\n[REMOVE THE TRASH FROM THE TRASHCAN: INPUT "dump"]\n')
+        message = input('\n\n[THIS IS THE TRUCK INTERFACE, YOU CAN:]\n[ASK FOR THE STATUS OF THE TRASHCAN: INPUT "status"]\n[REMOVE THE TRASH FROM THE TRASHCAN: INPUT "dump"]\n\n')
         client.send(message.encode('ascii'))
 
 # Starting threads

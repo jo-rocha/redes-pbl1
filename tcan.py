@@ -19,11 +19,13 @@ def receive():
             if message == 'ID':
                 client.send(clientID.encode('ascii'))
             elif message == 'dump':
-                print('hi')
                 currentLoad = 0
-                client.send(str(currentLoad).encode('ascii'))
+                sendMessage = f'<TRASHCAN STATUS: {str(currentLoad)}>'
+                client.send(sendMessage.encode('ascii'))
+                print(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n')
             elif message == 'status':
-                client.send(str(currentLoad).encode('ascii'))
+                sendMessage = f'<TRASHCAN STATUS: {str(currentLoad)}>'
+                client.send(sendMessage.encode('ascii'))
             elif message == 'hello':
                 print(message)
         except:
@@ -39,13 +41,13 @@ def write():
         # ##added
         # client.send('message from the tcan'.encode('ascii'))
         if currentLoad < loadCapacity:
-            trashInput = input(f'[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n')
+            trashInput = input(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n\n')
             aux = int(trashInput) + currentLoad
             if aux > loadCapacity:
-                input('[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH]')
+                input('\n\n[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH. INPUT: "ok" TO RETURN]\n\n')
             else: currentLoad = aux
         else:
-            input('[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED]\n[TYPE "ok" TO RELOAD THE STATUS OF THE TRASHCAN]')
+            input('\n\n[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED]\n[INPUT: "ok" TO RELOAD THE STATUS OF THE TRASHCAN]\n\n')
         
         
 receive_thread = threading.Thread(target = receive)
