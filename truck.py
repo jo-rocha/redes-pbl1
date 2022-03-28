@@ -17,7 +17,7 @@ def receive():
             else:
                 print(message)
         except:
-            print('An error has occurred!')
+            print('An error has occurred with truck!')
             break
 
 def write():

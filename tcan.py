@@ -19,20 +19,25 @@ def receive():
             if message == 'ID':
                 client.send(clientID.encode('ascii'))
             elif message == 'dump':
+                print('hi')
                 currentLoad = 0
                 client.send(currentLoad.encode('ascii'))
             elif message == 'status':
                 client.send(currentLoad.encode('ascii'))
+            elif message == 'hello':
+                print(message)
         except:
-            print('An error has occurred!')
+            print('An error has occurred with trashcan!')
             break
 
 def write():
     global currentLoad
     while True:
-        trashInput = input('[IF YOU WANT TO THROW TRASH IN THE TRASHCAN INPUT THE AMOUNT OF TRASH:\n]')
+        trashInput = input('[IF YOU WANT TO THROW TRASH IN THE TRASHCAN INPUT THE AMOUNT OF TRASH:]\n')
         currentLoad = currentLoad + int(trashInput)
         print(currentLoad)
+        ##added
+        client.send('message from the tcan'.encode('ascii'))
     
 receive_thread = threading.Thread(target = receive)
 receive_thread.start()
