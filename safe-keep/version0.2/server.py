@@ -34,32 +34,32 @@ def handle_tcan(connection,):
         try:
             message = connection.recv(1024).decode('ascii')
             ##added
-            print('<message from tcan>')
+            print('getting from tcan')
             send_to_truck(message)
         except:
-            print('[ERROR TRASHCAN SERVER!]')
+            print('an error has occurred trashcan server')
 
 def handle_truck(connection,):
     while True:
         try:
             message = connection.recv(1024).decode('ascii')
             send_to_trashcan(message)
-            print('<message from truck>')
+            print('hi')
         except:
-            print('[ERROR TRUCK SERVER!]')
+            print('and error has occurred truck-server')
 
 def send_to_truck(message):
     for i in clients:
         if i[1] == 'truck':
             truck = i[0]
-            truck.send(message.encode('ascii'))
+            truck.send('message'.encode('ascii'))
             break
     
 def send_to_trashcan(message):
     for i in clients:
         if i[1] == 'tcan':
             tcan = i[0]
-            tcan.send(message.encode('ascii'))
+            tcan.send('hello'.encode('ascii'))
             break
     
 
