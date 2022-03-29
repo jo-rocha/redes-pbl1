@@ -1,5 +1,6 @@
 import socket
 import threading
+import constant
 
 clientID = 'tcan'
 
@@ -9,7 +10,7 @@ currentLoad = 0
 
 # Connecting to Server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 55556))
+client.connect((constant.Host, constant.Port))
 
 def receive():
     global currentLoad
@@ -24,7 +25,7 @@ def receive():
                 client.send(sendMessage.encode('ascii'))
                 print(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n')
             elif message == 'status':
-                sendMessage = f'<TRASHCAN STATUS: {str(currentLoad)}>'
+                sendMessage = f'status:{str(currentLoad)}'
                 client.send(sendMessage.encode('ascii'))
             elif message == 'hello':
                 print(message)
@@ -45,7 +46,9 @@ def write():
             aux = int(trashInput) + currentLoad
             if aux > loadCapacity:
                 input('\n\n[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH. INPUT: "ok" TO RETURN]\n\n')
-            else: currentLoad = aux
+            else: 
+                currentLoad = aux
+                client.send(f'status:{str(currentLoad)}'.encode('ascii'))
         else:
             input('\n\n[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED]\n[INPUT: "ok" TO RELOAD THE STATUS OF THE TRASHCAN]\n\n')
         

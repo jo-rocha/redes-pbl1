@@ -1,11 +1,12 @@
 import socket
 import threading
+import constant
 
 clientID = 'truck'
 
 # Connection to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 55556))
+client.connect((constant.Host, constant.Port))
 
 def receive():
     #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
