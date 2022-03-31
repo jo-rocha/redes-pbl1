@@ -1,7 +1,6 @@
 import socket
 import threading
 import constant
-from operator import itemgetter
 
 # host = '127.0.0.1'
 # port = 55556
@@ -83,9 +82,8 @@ def assign_tcan(connection):
 # Essa função vai analisar a lista de lixeiras e fazer a ordenação de acordo com a quantidade de lixo que cada lixeira tem
 ##
 def sort_ordered_list():
-    trashcans.sort(key = lambda x: x[2], reverse = True)
     for i in trashcans:
-        print(f'{i[0]}, {i[2]}')
+        print(f'{i[0]}  ,  {i[2]}')
     #lembrar de chamar send_to_truck() quando terminar de atualizar a lista
 
 
