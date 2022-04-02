@@ -1,3 +1,5 @@
+from ast import Break
+from operator import truediv
 import socket
 import threading
 import constant
@@ -13,19 +15,16 @@ def receive():
     #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
     while True:
         try:
-            # json.loads(client.recv(1024).decode('ascii'))
-            message = client.recv(1024).decode('ascii')
-            # route = message["route"]
-            if message == 'ID':
-                print("entrou")
-                # clientID_JSON = "{'ID':'"+ clientID  +"'}"
-                client.send(clientID.encode('ascii'))
-            if message == 'get-next-tcan':
+            message = json.loads(client.recv(1024).decode('ascii'))
+            route = message["route"]
+            if route == 'get-next-tcan':
                 # Retorna a próxima lixeira da lista de lixeiras
                 pass
-            elif message == 'get-list-tcan':
+            elif route == 'get-list-tcan':
                 # Retorna a lista de lixeiras já ordenadas
                 pass
+            else:
+                print(f'{message}\n\n')
         except:
             print('[ERROR ADMIN!]')
             break
@@ -34,7 +33,6 @@ def receive():
 def write():
     #the message will be the input of the user
     controle = 1
-    # try:
     while True:
         # message = '{}'.format(input(''))
         if controle == 1:
@@ -55,16 +53,12 @@ def write():
             print("CLOSING APPLICATION...")
             client.close()
             break
-    # except:
-    #     client.close()
-    #     return None
+
         # client.send(message_JSON.encode('ascii'))
 
 # Change status the tcan (blocked or released)
 def change_status_tcan():
-    # clientID_JSON = "{'target':'tcan','route':'set-block''}"
-    message = "set-block"
-    client.send(message.encode('ascii'))
+    print("Mudar status da lixeira")
     pass
 
 # Change the capacity tcan

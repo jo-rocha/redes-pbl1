@@ -33,14 +33,9 @@ def start():
             elif connectionID == 'truck':
                 thread = threading.Thread(target = handle_truck, args = (connection,))
                 thread.start()
-            elif connectionID == 'admin':
-                print("Admin")
-                thread = threading.Thread(target = handle_admin, args = (connection,))
-                thread.start()
     except:
         server.close()
         connection.close()
-        print("interupted")
 
 ##
 # Função responsável por lidar com a conexão dos clientes do tipo trashcan(lixeira)
@@ -61,8 +56,6 @@ def handle_tcan(connection,):
                 trashcans[index][2] = message
 
                 sort_ordered_list()
-            elif message.startswith("status-released"):
-                print(message)
             else:
                 print('receiving the wrong message')
     except:
@@ -108,24 +101,6 @@ def handle_truck(connection,):
     except:
         print('[ERROR TRUCK SERVER!]')
         connection.close()
-
-def handle_admin(connection,):
-    try:
-        while True:
-            message = connection.recv(1024).decode('ascii')
-            send_to_trashcan(message)
-            # messageJSON = json.loads(message)
-            # if messageJSON["target"] == "tcan":
-            #     message = "set-block"
-            #     send_to_trashcan(message)
-            # elif messageJSON["target"] == "truck":
-            #     send_to_truck(message)
-            # else: 
-            #     print('[unspecified or unknown client]')
-            print('<message from admin>')
-    except:
-        print('[ERROR ADMIN SERVER!]')
-
 
 def send_to_truck(message):
     for i in clients:

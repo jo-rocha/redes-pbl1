@@ -1,5 +1,3 @@
-from email import message_from_file
-import json
 import socket
 import threading
 import constant
@@ -9,7 +7,6 @@ clientID = 'tcan'
 # Trashcan attributes
 loadCapacity = 60
 currentLoad = 0
-status = 1
 
 # Connecting to Server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,7 +17,6 @@ def receive():
     try:
         while True:
             message = client.recv(1024).decode('ascii')
-            print(message)
             if message == 'ID':
                 client.send(clientID.encode('ascii'))
             elif message == 'dump':
@@ -31,13 +27,6 @@ def receive():
             elif message == 'status':
                 sendMessage = f'status:{str(currentLoad)}'
                 client.send(sendMessage.encode('ascii'))
-            elif message == 'set-block':
-                # messageJSON = json.load(message)
-                status = 1
-                sendMessage = f'status-released:{"released" if status == 1 else "blocked"}'
-                # sendMessage = f'teste'
-                client.send(sendMessage.encode('ascii'))
-                print(f'\n\n[THE TRASHCAN IS {"RELEASED" if status == 1 else "BLOCKED"}]\n')
             elif message == 'hello':
                 print(message)
     except:

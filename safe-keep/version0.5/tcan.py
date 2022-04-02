@@ -18,6 +18,7 @@ def receive():
         try:
             message = json.loads(client.recv(1024).decode('ascii'))
             route = message["route"]
+            print(message)
             if route == 'ID':
                 clientID_JSON = "{'ID':'"+ clientID  +"'}"
                 client.send(clientID_JSON.encode('ascii'))
