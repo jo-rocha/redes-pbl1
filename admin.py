@@ -34,11 +34,9 @@ def receive():
 
 
 def write():
-    #the message will be the input of the user
     controle = 1
     # try:
     while True:
-        # message = '{}'.format(input(''))
         if controle == 1:
             request = input('[CHOOSE AN OPERATION]\n1-CHANGE STATUS TRASHCAN\n2-CHANGE CAPACITY TRASHCAN\n3-GET STATUS TRASHCANS\n4-CHANGE ORDER LIST TRASHCANS\n5-CLOSE\n\n\n\n\n')
             if request == "1":
@@ -52,7 +50,7 @@ def write():
             elif request == "5":
                 controle = 0
             else:
-                print("CHOOSE VALID OPTION")
+                print("[CHOOSE VALID OPTION]\n\n\n")
         else:
             print("CLOSING APPLICATION...")
             client.close()
