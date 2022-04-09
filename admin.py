@@ -15,18 +15,18 @@ def receive():
             message = client.recv(1024).decode('ascii')
             messageRoute = decode_message_route(message)
             if messageRoute == 'ID':
-                # sendMessage = encode_message_send("ID",clientID,clientID,"",0)
-                # client.send(sendMessage.encode('ascii'))
-                client.send(clientID.encode('ascii'))
+                sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
+                client.send(sendMessage.encode('ascii'))
+                # client.send(clientID.encode('ascii'))
             if messageRoute == 'get-next-tcan':
                 # Retorna a próxima lixeira da lista de lixeiras
-                # sendMessage = encode_message_send("ID",clientID,clientID,"",0)
-                # client.send(sendMessage.encode('ascii'))
+                sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
+                client.send(sendMessage.encode('ascii'))
                 pass
             elif messageRoute == 'get-list-tcan':
                 # Retorna a lista de lixeiras já ordenadas
-                 # sendMessage = encode_message_send("TRASHCAN STATUS",sendMessage,currentLoad,"",0)
-                # client.send(sendMessage.encode('ascii'))
+                sendMessage = encode_message_send("TRASHCAN STATUS",sendMessage,"","",0,"")
+                client.send(sendMessage.encode('ascii'))
                 pass
         except:
             print('[ERROR ADMIN!]')
@@ -65,36 +65,49 @@ def write():
 # Change status the tcan (blocked or released)
 def change_status_tcan():
     message = "set-block"
-    message = encode_message_send("set-block","","","PUT",1)
+    message = encode_message_send("set-block","","","PUT",1,"tcan")
     client.send(message.encode('ascii'))
 
 # Change the capacity tcan
 def change_capacity_tcan():
-    print("Mudar capacidade da lixeira")
-    pass
+    message = encode_message_send("get-tcans","","","GET",1,"tcan")
+    client.send(message.encode('ascii'))
+    
+    message = client.recv(1024).decode('ascii')
+    response = json.loads(message)
+    request = input('[CHOOSE THE TRASCAN]\n')
+    id_tcan = "";
+    message = encode_message_send("set-capacity-tcan",id_tcan,id_tcan,"GET",1,"tcan")
+    client.send(message.encode('ascii'))
 
 #Get status the list of tcans
 def get_status_tcans():
     print("Pegar status das lixeiras")
-    pass
+    message = encode_message_send("get-tcans","","","GET",1,"server")
+    client.send(message.encode('ascii'))
+    
+    message = client.recv(1024).decode('ascii')
+    response = json.loads(message);
+    
+    print(response["message"])
 
 # Change order the list of tcan
 def change_order_list_tcan():
     print("Mudar ordem da lista das lixeiras")
-    pass
 
 def decode_message_route(message):
     result = json.loads(message)
 
     return result["header"]["route"]
 
-def encode_message_send(route,message,value,method,type):
+def encode_message_send(route,message,value,method,type,target):
     # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
     message = ""
     if type == 0:
         message = {
             "header":{
                 "typeResponse": route,
+                "target":target
             },
             "value": value,
             "message": message
@@ -104,6 +117,7 @@ def encode_message_send(route,message,value,method,type):
             "header":{
                 "method": method,
                 "route": route,
+                "target":target
             },
             "value": value,
             "message": message

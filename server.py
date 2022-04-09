@@ -70,6 +70,9 @@ def handle_tcan(connection,):
                 sort_ordered_list()
             elif message.startswith("status-released"):
                 print(message)
+            elif message.startswith("get-tcans"):
+                for i in trashcans:
+                    pass
             else:
                 print('receiving the wrong message')
     except:
@@ -124,15 +127,21 @@ def handle_admin(connection,):
     try:
         while True:
             message = connection.recv(1024).decode('ascii')
-            send_to_trashcan(message)
-            # messageJSON = json.loads(message)
-            # if messageJSON["target"] == "tcan":
-            #     message = "set-block"
-            #     send_to_trashcan(message)
-            # elif messageJSON["target"] == "truck":
-            #     send_to_truck(message)
-            # else: 
-            #     print('[unspecified or unknown client]')
+            message_target = json.loads(message)["header"]["target"]
+            if message_target == "tcan":
+                send_to_trashcan(message)
+            elif message_target == "truck":
+                send_to_truck(message)
+            elif message_target == "server":
+               message_route = json.loads(message)["header"]["route"]
+               if(message_route == "get-tcans"):
+                   message_response = ""
+                   for i in trashcans:
+                       message_response +=f'"TRASHCAN ID:"{i[0]} + "CAPACITY: {i[2]}"\n'
+                    
+                       
+            else: 
+                print('[unspecified or unknown client]')
             print('<message from admin>')
     except:
         print('[ERROR ADMIN SERVER!]')
