@@ -10,21 +10,23 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
 
 def receive():
-    #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
     while True:
         try:
-            # json.loads(client.recv(1024).decode('ascii'))
             message = client.recv(1024).decode('ascii')
-            # route = message["route"]
-            if message == 'ID':
-                print("entrou")
-                # clientID_JSON = "{'ID':'"+ clientID  +"'}"
+            messageRoute = decode_message_route(message)
+            if messageRoute == 'ID':
+                # sendMessage = encode_message_send("ID",clientID,clientID,"",0)
+                # client.send(sendMessage.encode('ascii'))
                 client.send(clientID.encode('ascii'))
-            if message == 'get-next-tcan':
+            if messageRoute == 'get-next-tcan':
                 # Retorna a próxima lixeira da lista de lixeiras
+                # sendMessage = encode_message_send("ID",clientID,clientID,"",0)
+                # client.send(sendMessage.encode('ascii'))
                 pass
-            elif message == 'get-list-tcan':
+            elif messageRoute == 'get-list-tcan':
                 # Retorna a lista de lixeiras já ordenadas
+                 # sendMessage = encode_message_send("TRASHCAN STATUS",sendMessage,currentLoad,"",0)
+                # client.send(sendMessage.encode('ascii'))
                 pass
         except:
             print('[ERROR ADMIN!]')
@@ -62,10 +64,9 @@ def write():
 
 # Change status the tcan (blocked or released)
 def change_status_tcan():
-    # clientID_JSON = "{'target':'tcan','route':'set-block''}"
     message = "set-block"
+    message = encode_message_send("set-block","","","PUT",1)
     client.send(message.encode('ascii'))
-    pass
 
 # Change the capacity tcan
 def change_capacity_tcan():
@@ -81,6 +82,34 @@ def get_status_tcans():
 def change_order_list_tcan():
     print("Mudar ordem da lista das lixeiras")
     pass
+
+def decode_message_route(message):
+    result = json.loads(message)
+
+    return result["header"]["route"]
+
+def encode_message_send(route,message,value,method,type):
+    # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
+    message = ""
+    if type == 0:
+        message = {
+            "header":{
+                "typeResponse": route,
+            },
+            "value": value,
+            "message": message
+        }
+    else:
+        message = {
+            "header":{
+                "method": method,
+                "route": route,
+            },
+            "value": value,
+            "message": message
+        }
+
+    return json.dumps(message)
 
 # Starting threads
 receive_thread = threading.Thread(target = receive)

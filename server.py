@@ -1,6 +1,7 @@
 import socket
 import threading
 import constant
+import json
 from operator import itemgetter
 
 # host = '127.0.0.1'
@@ -21,7 +22,9 @@ def start():
     try:
         while(True):
             connection, address = server.accept()
-            connection.send('ID'.encode('ascii'))# O server manda uma mensagem que funciona como um 'trigger' para que o cliente mande uma identificação (lixeira, caminhão ou admin)
+            message = encode_message_send("ID","","ID","GET",1)
+            connection.send(message.encode('ascii'))# O server manda uma mensagem que funciona como um 'trigger' para que o cliente mande uma identificação (lixeira, caminhão ou admin)
+            # connection.send('ID'.encode('ascii'))# O server manda uma mensagem que funciona como um 'trigger' para que o cliente mande uma identificação (lixeira, caminhão ou admin)
             connectionID = connection.recv(1024).decode('ascii')
             print(f'[ESTABLISHED CONNECTION WITH {address}]')
             clients.append((connection, connectionID))
@@ -50,9 +53,13 @@ def handle_tcan(connection,):
     try:
         while True:
             message = connection.recv(1024).decode('ascii')
-            if message.startswith('status:'):# Se a lixeira foi esvaziada, ou se ela foi atualizada em seu volume de lixo a lista tem que ser atualizada
-                message = message[7:]
+            message = decode_message_response(message)
+            if message.startswith('status'):# Se a lixeira foi esvaziada, ou se ela foi atualizada em seu volume de lixo a lista tem que ser atualizada
+                # message = message[7:]
                 # Procura o index na lista de lixeiras do cliente atual para atualizar seu status
+                message_decode = json.loads(message)
+                print(message_decode["value"])
+                message = message_decode["value"]# Corta o início da mensagem que é 'status:'
                 index = 0
                 for i in trashcans:
                     if i[0] == unitID:
@@ -77,10 +84,14 @@ def handle_tcan(connection,):
 ##
 def assign_tcan(connection):
     unitID = str(len(trashcans))
-    connection.send('status'.encode('ascii'))
+    message = encode_message_send("status","","status","GET","1")
+    connection.send(message.encode('ascii'))
     message = connection.recv(1024).decode('ascii')
-    if message.startswith('status:'):
-        status = message[7:]# Corta o início da mensagem que é 'status:'
+    message_route = decode_message_response(message)
+    if message_route.startswith('status'):
+        message_decode = json.loads(message)
+        # status = message[7:]# Corta o início da mensagem que é 'status:'
+        status = message_decode["value"]# Corta o início da mensagem que é 'status:'
         trashcans.append([unitID, connection, status])
     else: print('not getting the status of the trashcan')
     #retorna a posição em que este cliente foi colocado na lista de lixeiras para facilitar a atualização de seu status na função handle_tcan
@@ -142,5 +153,36 @@ def send_to_trashcan(message):
             tcan.send(message.encode('ascii'))
             break
     
+def decode_message_route(message):
+    result = json.loads(message)
 
+    return result["header"]["route"]
+
+def encode_message_send(route,message,value,method,type):
+    # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
+    message = ""
+    if type == 0:
+        message = {
+            "header":{
+                "typeResponse": route,
+            },
+            "value": value,
+            "message": message
+        }
+    else:
+        message = {
+            "header":{
+                "method": method,
+                "route": route,
+            },
+            "value": value,
+            "message": message
+        }
+
+    return json.dumps(message)
+
+def decode_message_response(message):
+    message = json.loads(message)
+
+    return message["header"]["typeResponse"]
 start()
