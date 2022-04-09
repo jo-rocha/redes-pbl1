@@ -139,7 +139,7 @@ def handle_admin(connection,):
                    for i in trashcans:
                        message_response +=f'"TRASHCAN ID:"{i[0]} + "CAPACITY: {i[2]}"\n'
                     
-                       
+                       connection.send(message.encode('ascii'))
             else: 
                 print('[unspecified or unknown client]')
             print('<message from admin>')
