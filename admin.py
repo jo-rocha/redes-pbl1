@@ -4,7 +4,7 @@ import constant
 import json
 
 clientID = 'admin'
-
+list_tcans = []
 #Connection to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
@@ -18,14 +18,14 @@ def receive():
                 sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
                 client.send(sendMessage.encode('ascii'))
                 # client.send(clientID.encode('ascii'))
-            if messageRoute == 'get-next-tcan':
-                # Retorna a próxima lixeira da lista de lixeiras
-                sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
-                client.send(sendMessage.encode('ascii'))
-                pass
+            # elif messageRoute == 'get-next-tcan':
+            #     # Retorna a próxima lixeira da lista de lixeiras
+            #     sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
+            #     client.send(sendMessage.encode('ascii'))
+            #     pass
             elif messageRoute == 'get-list-tcan':
                 # Retorna a lista de lixeiras já ordenadas
-                sendMessage = encode_message_send("TRASHCAN STATUS",sendMessage,"","",0,"")
+                sendMessage = encode_message_send("trashcan-list",sendMessage,"","",0,"")
                 client.send(sendMessage.encode('ascii'))
                 pass
         except:
@@ -81,18 +81,36 @@ def change_capacity_tcan():
 
 #Get status the list of tcans
 def get_status_tcans():
-    print("Pegar status das lixeiras")
-    message = encode_message_send("get-tcans","","","GET",1,"server")
-    client.send(message.encode('ascii'))
+    # message = encode_message_send("get-tcans","","","GET",1,"server")
+    # client.send(message.encode('ascii'))
     
-    message = client.recv(1024).decode('ascii')
-    response = json.loads(message);
+    # message = client.recv(1024).decode('ascii')
+    # response = json.loads(message);
+    if len(list_tcans) == 0:
+        print(["NO TRASHCAN REGISTERED"])
+    else:
+        message = ""
+        for i in list_tcans:
+            message+=f'TRASHCAN ID: {i[0]}  CAPACITY: {i[2]}  LOCK: {"BLOCKED" if i[3] == "1" else "RELEASED"}\n'
     
-    print(response["message"])
+        print(message)
 
 # Change order the list of tcan
 def change_order_list_tcan():
-    print("Mudar ordem da lista das lixeiras")
+    if len(list_tcans) == 0:
+        print(["NO TRASHCAN REGISTERED"])
+    else:
+        message = ""
+        tcan_id = input('[CHOOSE THE ID THE TRASCAN]\n')
+        for i in list_tcans:
+            message+=f'TRASHCAN ID: {i[0]}  CAPACITY: {i[2]}  LOCK: {"BLOCKED" if i[3] == "1" else "RELEASED"}\n'
+    
+        message = encode_message_send("change-order-list",tcan_id,tcan_id,"PUT",1,"server")
+        client.send(message.encode('ascii'))
+
+        message_return = client.recv(1024).decode('ascii')
+
+        print(json.loads(message_return)[message])
 
 def decode_message_route(message):
     result = json.loads(message)

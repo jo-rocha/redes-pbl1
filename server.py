@@ -63,7 +63,7 @@ def handle_client(connection, address):
                         index += 1
                     trashcans[index][2] = message
                     sort_ordered_list()
-                    #mandar lista pro caminhão
+                    #mandar lista pro caminhão e para o admin
                 elif message_response.startswith('dumped'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
                     index = 0
                     for i in trashcans:
@@ -98,18 +98,42 @@ def handle_client(connection, address):
             while True:
                 message = connection.recv(1024).decode('ascii')
                 message_target = json.loads(message)["header"]["target"]
+                
                 if message_target == "tcan":
                     send_to_trashcan(message)
+                
                 elif message_target == "truck":
                     send_to_truck(message)
+                
                 elif message_target == "server":
+                    
                     message_route = json.loads(message)["header"]["route"]
                     if(message_route == "get-tcans"):
+                        
                         message_response = ""
                         for i in trashcans:
                             message_response +=f'"TRASHCAN ID:"{i[0]} + "CAPACITY: {i[2]}"\n'
                         
                         connection.send(message.encode('ascii'))
+                    
+                    elif(message_route == "change-order-list"):
+                        tcan_id = json.loads(message)["value"]
+                        index -1
+                        for idx,i in trashcans:
+                            if i[0] == tcan_id:
+                                index = idx
+                                break
+                        message_return = "UNSPECIFIED OR UNKONWN TRASHCANS"
+                        
+                        if index > -1:
+                            tcan_temp = trashcans[index]
+                            trashcans.pop(index)
+                            trashcans.insert(0,tcan_temp)
+                            message_return = "ORDER UPDATED SUCCESSFULLY"
+                        
+                        message = encode_message_send("change-order-list",message_return,index,"",0)
+                        connection.send(message.encode('ascii'))
+                
                 else: 
                     print('[unspecified or unknown client]')
                     print('<message from admin>')
