@@ -8,7 +8,7 @@ clientID = 'tcan'
 # Trashcan attributes
 loadCapacity = 60
 currentLoad = 0
-
+lock = "0"
 # Connecting to Server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
@@ -19,7 +19,7 @@ def receive():
         while True:
             message = client.recv(1024).decode('ascii')
             messageRoute = decode_message_route(message)
-            
+
             if messageRoute == 'ID':
                 sendMessage = encode_message_send("ID",clientID,clientID,"",0)
                 client.send(sendMessage.encode('ascii'))
@@ -36,11 +36,16 @@ def receive():
                 client.send(sendMessage.encode('ascii'))
             
             elif messageRoute == 'set-block':
-                status = 1
-                sendMessage = encode_message_send("status-released",sendMessage,currentLoad,"",0)
+                # if lock == "1":
+                #     lock = "0"
+                # else:
+                #     lock = "1"
+                lock = "1"
+                sendMessage = encode_message_send("released",lock,lock,"",0)
+                print(sendMessage)
                 client.send(sendMessage.encode('ascii'))
                 
-                print(f'\n\n[THE TRASHCAN IS {"RELEASED" if status == 1 else "BLOCKED"}]\n')
+                print(f'"[THE TRASHCAN IS {"BLOCKED" if lock == "1" else "RELEASED"}]"\n')
             
             elif messageRoute == 'hello':
                 print(message)

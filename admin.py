@@ -63,7 +63,8 @@ def write():
 # Change status the tcan (blocked or released)
 def change_status_tcan():
     message = "set-block"
-    message = encode_message_send("set-block","","","PUT",1,"tcan")
+    tcan_id = input('[CHOOSE THE TRASCAN]\n')
+    message = encode_message_send("set-block",tcan_id,tcan_id,"PUT",1,"tcan")
     client.send(message.encode('ascii'))
 
 # Change the capacity tcan
@@ -118,7 +119,7 @@ def encode_message_send(route,message,value,method,type,target):
                 "target":target
             },
             "value": value,
-            "message": message
+            "message": message,
         }
 
     return json.dumps(message)

@@ -1,6 +1,7 @@
 import socket
 import threading
 import constant
+import json
 from operator import itemgetter
 
 # host = '127.0.0.1'
@@ -32,8 +33,15 @@ def start():
 # Função responśavel por lidar com o cliente assim que ele se conecta com o servidor
 ##
 def handle_client(connection, address):
-    connection.send('ID'.encode('ascii'))# O server manda uma mensagem que funciona como um 'trigger' para que o cliente mande uma identificação (lixeira, caminhão ou admin)
+    message = encode_message_send("ID","","ID","GET",1)
+
+    connection.send(message.encode('ascii'))
+    
     connectionID = connection.recv(1024).decode('ascii')
+    message_decode = json.loads(connectionID)
+    
+    connectionID = message_decode["value"]
+
     print(f'[ESTABLISHED CONNECTION WITH {address}]')
     clients.append((connection, connectionID))
     # Agora que o cliente está conectado e guardado em clients[], eu preciso iniciar a thread para lidar com o enviar e receber
@@ -43,8 +51,10 @@ def handle_client(connection, address):
         try:
             while True:
                 message = connection.recv(1024).decode('ascii')
-                if message.startswith('status:'):# Se a lixeira foi esvaziada, ou se ela foi atualizada em seu volume de lixo a lista tem que ser atualizada
-                    message = message[7:]# tira o 'status:' da mensagem para ficar só o valor
+                message_response = decode_message_response(message)
+                if message_response.startswith('status'):# Se a lixeira foi esvaziada, ou se ela foi atualizada em seu volume de lixo a lista tem que ser atualizada
+                    message_decode = json.loads(message)
+                    message = message_decode["value"]# Corta o início da mensagem que é 'status:'
                     # Procura o index na lista de lixeiras do cliente atual para atualizar seu status
                     index = 0
                     for i in trashcans:
@@ -54,7 +64,7 @@ def handle_client(connection, address):
                     trashcans[index][2] = message
                     sort_ordered_list()
                     #mandar lista pro caminhão
-                elif message.startswith('dumped:'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
+                elif message_response.startswith('dumped'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
                     index = 0
                     for i in trashcans:
                         if i[0] == unitID:
@@ -63,6 +73,11 @@ def handle_client(connection, address):
                     trashcans[index][2] = '0'
                     sort_ordered_list()
                     #no json adicionar na mensagem para o caminhão a quantidade de lixo esvaziada da lixeira que é o 'message'
+                elif message_response.startswith("released"):
+                    message_decode = json.loads(message)
+                    print(f'"[THE TRASHCAN IS {"BLOCKED" if message_decode["value"] == "1" else "RELEASED"}]"\n')
+                elif message_response.startswith("get-tcans"):
+                    pass
                 else:
                     print('receiving the wrong message')
         except:
@@ -77,7 +92,30 @@ def handle_client(connection, address):
         except:
             print('[ERROR TRUCK SERVER!]')
             connection.close()
-
+    elif connectionID == 'admin':
+        admin = connection
+        try:
+            while True:
+                message = connection.recv(1024).decode('ascii')
+                message_target = json.loads(message)["header"]["target"]
+                if message_target == "tcan":
+                    send_to_trashcan(message)
+                elif message_target == "truck":
+                    send_to_truck(message)
+                elif message_target == "server":
+                    message_route = json.loads(message)["header"]["route"]
+                    if(message_route == "get-tcans"):
+                        message_response = ""
+                        for i in trashcans:
+                            message_response +=f'"TRASHCAN ID:"{i[0]} + "CAPACITY: {i[2]}"\n'
+                        
+                        connection.send(message.encode('ascii'))
+                else: 
+                    print('[unspecified or unknown client]')
+                    print('<message from admin>')
+        except:
+            print('[ERROR ADMIN SERVER!]')
+            connection.close()
 ##
 # Essa função vai designar um ID único para cada lixeira conectada no servidor e colocá-la na lista de lixeiras. Depois ela vai retornar o itme que ela acabou
 # de colocar na lixeira para facilitar a atualização do status da lixeira na função handle_tcan()
@@ -86,11 +124,15 @@ def handle_client(connection, address):
 ##
 def assign_tcan(connection):
     unitID = str(len(trashcans))
-    connection.send('status'.encode('ascii'))
+    lock = False
+    message = encode_message_send("status","","status","GET","1")
+    connection.send(message.encode('ascii'))
     message = connection.recv(1024).decode('ascii')
-    if message.startswith('status:'):
-        status = message[7:]# Corta o início da mensagem que é 'status:'
-        trashcans.append([unitID, connection, status])
+    message_route = decode_message_response(message)
+    if message_route.startswith('status'):
+        message_decode = json.loads(message)
+        status = message_decode["value"]# Corta o início da mensagem que é 'status:'
+        trashcans.append([unitID, connection, status, lock])
     else: print('not getting the status of the trashcan')
     #retorna a posição em que este cliente foi colocado na lista de lixeiras para facilitar a atualização de seu status na função handle_tcan
     return unitID
@@ -118,12 +160,46 @@ def send_to_truck(message):
 #             break
     
 # # não vai ser usada
-# def send_to_trashcan(message):
-#     for i in clients:
-#         if i[1] == 'tcan':
-#             tcan = i[0]
-#             tcan.send(message.encode('ascii'))
-#             break
+def send_to_trashcan(message):
+    tcan_id = json.loads(message)["value"]
+    for i in trashcans:
+        if i[0] == tcan_id:
+            tcan = i[1]
+            tcan.send(message.encode('ascii'))
+            break
     
+def decode_message_route(message):
+    result = json.loads(message)
+
+    return result["header"]["route"]
+
+def encode_message_send(route,message,value,method,type):
+    # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
+    message = ""
+    if type == 0:
+        message = {
+            "header":{
+                "typeResponse": route,
+            },
+            "value": value,
+            "message": message
+        }
+    else:
+        message = {
+            "header":{
+                "method": method,
+                "route": route,
+            },
+            "value": value,
+            "message": message
+        }
+
+    return json.dumps(message)
+
+def decode_message_response(message):
+    message = json.loads(message)
+
+    return message["header"]["typeResponse"]
+
 
 start()
