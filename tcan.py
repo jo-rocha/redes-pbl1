@@ -63,7 +63,7 @@ def write():
             # print(currentLoad)
             # ##added
             # client.send('message from the tcan'.encode('ascii'))
-            trashInput = input(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n\n')
+            trashInput = input(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity} AND THE TRASHCAN IS {"BLOCKED" if lock == "1" else "RELEASED"} ]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n\n')
             if trashInput != 'dump':
                 if currentLoad < loadCapacity:
                     aux = int(trashInput) + currentLoad
