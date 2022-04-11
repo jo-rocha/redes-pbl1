@@ -28,6 +28,8 @@ def receive():
                 sendMessage = encode_message_send("trashcan-list",sendMessage,"","",0,"")
                 client.send(sendMessage.encode('ascii'))
                 pass
+            elif messageRoute == 'set-list-tcans':
+                messageResponse = json.loads(message)["value"]
         except:
             print('[ERROR ADMIN!]')
             break
@@ -142,6 +144,8 @@ def encode_message_send(route,message,value,method,type,target):
 
     return json.dumps(message)
 
+def update_list_tcans(list_tcans):
+    pass 
 # Starting threads
 receive_thread = threading.Thread(target = receive)
 receive_thread.start()

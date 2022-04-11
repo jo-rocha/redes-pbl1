@@ -32,7 +32,7 @@ def receive():
                 print(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n')
             
             elif messageRoute == 'status':
-                sendMessage = encode_message_send("status",sendMessage,currentLoad,"",0)
+                sendMessage = encode_message_send("status",currentLoad,currentLoad,"",0)
                 client.send(sendMessage.encode('ascii'))
             
             elif messageRoute == 'set-block':
@@ -71,7 +71,7 @@ def write():
                         input('[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH. INPUT: "ok" TO RETURN]\n\n')
                     else: 
                         currentLoad = aux
-                        sendMessage = encode_message_send("status","status",currentLoad,"POST",1)
+                        sendMessage = encode_message_send("status","status",currentLoad,"POST",0)
                         client.send(sendMessage.encode('ascii'))
                 else:
                     print("""######################################################################\n#[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED]#\n######################################################################

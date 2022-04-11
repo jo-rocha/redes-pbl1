@@ -72,6 +72,11 @@ def handle_client(connection, address):
                         index += 1
                     trashcans[index][2] = '0'
                     sort_ordered_list()
+                    # message_list_tcans = ', '.join(trashcans)
+                    # print(message_list_tcans)
+                    # sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",0)
+                    # send_to_truck(sendMessage)
+                    # send_to_admin(sendMessage)
                     #no json adicionar na mensagem para o caminhão a quantidade de lixo esvaziada da lixeira que é o 'message'
                 elif message_response.startswith("released"):
                     message_decode = json.loads(message)
@@ -176,12 +181,19 @@ def send_to_truck(message):
             truck = i[0]
             truck.send(message)
 
-# def send_to_truck(message):
-#     for i in clients:
-#         if i[1] == 'truck':
-#             truck = i[0]
-#             truck.send(message.encode('ascii'))
-#             break
+def send_to_truck(message):
+    for i in clients:
+        if i[1] == 'truck':
+            truck = i[0]
+            truck.send(message.encode('ascii'))
+            break
+
+def send_to_admin(message):
+    for i in clients:
+        if i[1] == 'admin':
+            admin = i[0]
+            admin.send(message.encode('ascii'))
+            break
     
 # # não vai ser usada
 def send_to_trashcan(message):
