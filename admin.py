@@ -1,3 +1,4 @@
+from ctypes.wintypes import PINT
 import socket
 import threading
 import constant
@@ -13,7 +14,6 @@ def receive():
     while True:
         try:
             message = client.recv(1024).decode('ascii')
-            print(message)
             messageRoute = decode_message_route(message)
             if messageRoute == 'ID':
                 sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
@@ -30,10 +30,8 @@ def receive():
                 client.send(sendMessage.encode('ascii'))
                 pass
             elif messageRoute == 'set-list-tcans':
-                print(message)
                 messageResponse = json.loads(message)["value"]
-                messageResponse = update_list_tcans()
-                print(messageResponse)
+                messageResponse = update_list_tcans(messageResponse)
                 print("[TRASH CANS LIST UPDATED]")
         except:
             print('[ERROR ADMIN!]')
@@ -150,13 +148,17 @@ def encode_message_send(route,message,value,method,type,target):
     return json.dumps(message)
 
 def update_list_tcans(list_tcansAux):
-    list_tcans = list_tcansAux
-    list = list_tcansAux.split(';')
+
+    if list_tcansAux.count(';') > 0:
+        list = list_tcansAux.split(';')
+    else:
+        list = []
+        list.append(list_tcansAux)
 
     message = ''
     for i in list:
         info_tcan = i.split(',')
-        message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}'
+        message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n'
 
     return message
 # Starting threads

@@ -66,10 +66,10 @@ def handle_client(connection, address):
                     
                     trashcansAux = []
                     for trashcan in trashcans:
-                        trashcansAux.append(f'{trashcan[0]}, {trashcan[2]}, {trashcan[3]}')
+                        trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
                     message_list_tcans = '; '.join(trashcansAux)
-                    print(message_list_tcans)
-                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",0)
+
+                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
                     send_to_truck(sendMessage)
                     send_to_admin(sendMessage)    
                     #mandar lista pro caminhão e para o admin
