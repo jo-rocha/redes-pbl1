@@ -79,7 +79,7 @@ def write():
             else:
                 toTruck = currentLoad # Guarda uma auxiliar 'toTruck' para quando a lixeira esvaziar mandar a carga para o caminhão
                 currentLoad = 0
-                sendMessage = encode_message_send("dumped","dumped",currentLoad,"POST",1)
+                sendMessage = encode_message_send("dumped","dumped",currentLoad,"POST",0)
                 client.send(sendMessage.encode('ascii'))
                 # Mandar a capacidade da lixeira antes de exvaziar
     except:
