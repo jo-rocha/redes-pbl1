@@ -13,6 +13,7 @@ def receive():
     while True:
         try:
             message = client.recv(1024).decode('ascii')
+            print(message)
             messageRoute = decode_message_route(message)
             if messageRoute == 'ID':
                 sendMessage = encode_message_send("ID",clientID,clientID,"",0,"")
@@ -29,8 +30,9 @@ def receive():
                 client.send(sendMessage.encode('ascii'))
                 pass
             elif messageRoute == 'set-list-tcans':
+                print(message)
                 messageResponse = json.loads(message)["value"]
-
+                messageResponse = update_list_tcans()
                 print(messageResponse)
                 print("[TRASH CANS LIST UPDATED]")
         except:
@@ -147,8 +149,16 @@ def encode_message_send(route,message,value,method,type,target):
 
     return json.dumps(message)
 
-def update_list_tcans(list_tcans):
-    pass 
+def update_list_tcans(list_tcansAux):
+    list_tcans = list_tcansAux
+    list = list_tcansAux.split(';')
+
+    message = ''
+    for i in list:
+        info_tcan = i.split(',')
+        message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}'
+
+    return message
 # Starting threads
 receive_thread = threading.Thread(target = receive)
 receive_thread.start()
