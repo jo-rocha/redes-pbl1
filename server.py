@@ -63,6 +63,14 @@ def handle_client(connection, address):
                         index += 1
                     trashcans[index][2] = message
                     sort_ordered_list()
+                    # trashcansAux = []
+                    # for trashcan in trashcans:
+                    #     trashcansAux.append([trashcan[0], trashcan[1], trashcan[2]])
+                    # message_list_tcans = ', '.join(trashcansAux)
+                    # print(message_list_tcans)
+                    # sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",0)
+                    # send_to_truck(sendMessage)
+                    # send_to_admin(sendMessage)    
                     #mandar lista pro caminhão e para o admin
                 elif message_response.startswith('dumped'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
                     index = 0
@@ -72,11 +80,14 @@ def handle_client(connection, address):
                         index += 1
                     trashcans[index][2] = '0'
                     sort_ordered_list()
-                    # message_list_tcans = ', '.join(trashcans)
+                    # trashcansAux = []
+                    # for trashcan in trashcans:
+                    #     trashcansAux.append([trashcan[0], trashcan[1], trashcan[2]])
+                    # message_list_tcans = ', '.join(trashcansAux)
                     # print(message_list_tcans)
                     # sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",0)
                     # send_to_truck(sendMessage)
-                    # send_to_admin(sendMessage)
+                    # send_to_admin(sendMessage)    
                     #no json adicionar na mensagem para o caminhão a quantidade de lixo esvaziada da lixeira que é o 'message'
                 elif message_response.startswith("released"):
                     message_decode = json.loads(message)

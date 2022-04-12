@@ -30,6 +30,9 @@ def receive():
                 pass
             elif messageRoute == 'set-list-tcans':
                 messageResponse = json.loads(message)["value"]
+
+                print(messageResponse)
+                print("[TRASH CANS LIST UPDATED]")
         except:
             print('[ERROR ADMIN!]')
             break

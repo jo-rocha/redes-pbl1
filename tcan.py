@@ -37,7 +37,7 @@ def receive():
             
             elif messageRoute == 'set-block':
                 # if lock == "1":
-                #     lock = "0"
+                #     lock = "0" 
                 # else:
                 #     lock = "1"
                 lock = "1"
@@ -46,7 +46,11 @@ def receive():
                 client.send(sendMessage.encode('ascii'))
                 
                 print(f'"[THE TRASHCAN IS {"BLOCKED" if lock == "1" else "RELEASED"}]"\n')
-            
+            elif messageRoute == 'set-list-tcans':
+                 messageResponse = json.loads(message)["value"]
+
+                 print(messageResponse)
+                 print("[TRASH CANS LIST UPDATED]")
             elif messageRoute == 'hello':
                 print(message)
     except:

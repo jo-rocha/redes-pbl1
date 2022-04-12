@@ -22,6 +22,7 @@ def receive():
             elif message.startswith('list:'):
                 message = message[5:]
                 print(message)
+            
             else:
                 print(f'{message}\n\n')
     except:
