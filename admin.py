@@ -1,4 +1,3 @@
-from ctypes.wintypes import PINT
 import socket
 import threading
 import constant
@@ -117,9 +116,9 @@ def change_order_list_tcan():
         message = encode_message_send("change-order-list",tcan_id,tcan_id,"PUT",1,"server")
         client.send(message.encode('ascii'))
 
-        message_return = client.recv(1024).decode('ascii')
+        # message_return = client.recv(1024).decode('ascii')
 
-        print(json.loads(message_return)[message])
+        # print(json.loads(message_return)[message])
 
 def decode_message_route(message):
     result = json.loads(message)
@@ -152,7 +151,8 @@ def encode_message_send(route,message,value,method,type,target):
     return json.dumps(message)
 
 def update_list_tcans(list_tcansAux):
-
+    print("Entrou função")
+    list = ''
     if list_tcansAux.count(';') > 0:
         list = list_tcansAux.split(';')
     else:
@@ -161,9 +161,11 @@ def update_list_tcans(list_tcansAux):
     
     message = ''
     list_tcans.clear()
+    print("Entrou função")
     for i in list:
         list_tcans.append(i)
         info_tcan = i.split(',')
+        print(f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n')
         message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n'
 
     return message

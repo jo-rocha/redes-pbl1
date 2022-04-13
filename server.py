@@ -1,3 +1,4 @@
+from itertools import count
 import socket
 import threading
 import constant
@@ -86,7 +87,7 @@ def handle_client(connection, address):
                     for trashcan in trashcans:
                         trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
                     message_list_tcans = '; '.join(trashcansAux)
-
+                    print(message_list_tcans)
                     sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
                     send_to_truck(sendMessage)
                     send_to_admin(sendMessage)    
@@ -135,13 +136,18 @@ def handle_client(connection, address):
                         connection.send(message.encode('ascii'))
                     
                     elif(message_route == "change-order-list"):
+                        
                         tcan_id = json.loads(message)["value"]
-                        index = -1
-                        for idx,i in trashcans:
+                        index = 0
+                        
+                        for i in trashcans:
                             if i[0] == tcan_id:
-                                index = idx
                                 break
+                            else:
+                                index = index + 1
+                        
                         message_return = "UNSPECIFIED OR UNKONWN TRASHCANS"
+                        print("Encontrou lixeira")
                         
                         if index > -1:
                             tcan_temp = trashcans[index]
@@ -149,7 +155,14 @@ def handle_client(connection, address):
                             trashcans.insert(0,tcan_temp)
                             message_return = "ORDER UPDATED SUCCESSFULLY"
                         
-                        message = encode_message_send("change-order-list",message_return,index,"",0)
+                        print("Entrou rota servidor")
+                        trashcansAux = []
+                        message_list_tcans = ''
+                        for trashcan in trashcans:
+                            trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
+                            message_list_tcans = '; '.join(trashcansAux)
+                        
+                        message = encode_message_send("set-list-tcans",message_return,message_list_tcans,"",1)
                         connection.send(message.encode('ascii'))
                 
                 else: 
