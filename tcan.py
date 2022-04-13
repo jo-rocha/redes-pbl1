@@ -78,7 +78,7 @@ def write():
                         sendMessage = encode_message_send("status","status",currentLoad,"POST",0)
                         client.send(sendMessage.encode('ascii'))
                 else:
-                    print("""######################################################################\n#[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED]#\n######################################################################
+                    print("""######################################################################\n#[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED!]#\n######################################################################
                     """)
             else:
                 toTruck = currentLoad # Guarda uma auxiliar 'toTruck' para quando a lixeira esvaziar mandar a carga para o caminhão
@@ -117,6 +117,7 @@ def encode_message_send(route,message,value,method,type):
         }
 
     return json.dumps(message)     
+    
 receive_thread = threading.Thread(target = receive)
 receive_thread.start()
 
