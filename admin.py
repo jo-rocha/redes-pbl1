@@ -96,20 +96,24 @@ def get_status_tcans():
     else:
         message = ""
         for i in list_tcans:
-            message+=f'TRASHCAN ID: {i[0]}  CAPACITY: {i[2]}  LOCK: {"BLOCKED" if i[3] == "1" else "RELEASED"}\n'
+            info_tcan = i.split(',')
+            message+=f'TRASHCAN ID: {info_tcan[0]}  CAPACITY: {info_tcan[1]}  LOCK: {"BLOCKED" if info_tcan[2] == "1" else "RELEASED"}\n'
     
         print(message)
 
 # Change order the list of tcan
 def change_order_list_tcan():
     if len(list_tcans) == 0:
-        print(["NO TRASHCAN REGISTERED"])
+        print("[NO TRASHCAN REGISTERED]")
     else:
         message = ""
-        tcan_id = input('[CHOOSE THE ID THE TRASCAN]\n')
         for i in list_tcans:
-            message+=f'TRASHCAN ID: {i[0]}  CAPACITY: {i[2]}  LOCK: {"BLOCKED" if i[3] == "1" else "RELEASED"}\n'
+            info_tcan = i.split(',')
+            message+=f'TRASHCAN ID: {info_tcan[0]}  CAPACITY: {info_tcan[1]}  LOCK: {"BLOCKED" if info_tcan[2] == "1" else "RELEASED"}\n'
     
+        print(message)
+        tcan_id = input('\n\n\n[CHOOSE THE ID THE TRASCAN]\n\n\n')
+        
         message = encode_message_send("change-order-list",tcan_id,tcan_id,"PUT",1,"server")
         client.send(message.encode('ascii'))
 
@@ -154,9 +158,11 @@ def update_list_tcans(list_tcansAux):
     else:
         list = []
         list.append(list_tcansAux)
-
+    
     message = ''
+    list_tcans.clear()
     for i in list:
+        list_tcans.append(i)
         info_tcan = i.split(',')
         message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n'
 

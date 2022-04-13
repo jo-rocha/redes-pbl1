@@ -81,14 +81,15 @@ def handle_client(connection, address):
                         index += 1
                     trashcans[index][2] = '0'
                     sort_ordered_list()
-                    # trashcansAux = []
-                    # for trashcan in trashcans:
-                    #     trashcansAux.append([trashcan[0], trashcan[1], trashcan[2]])
-                    # message_list_tcans = ', '.join(trashcansAux)
-                    # print(message_list_tcans)
-                    # sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
-                    # send_to_truck(sendMessage)
-                    # send_to_admin(sendMessage)    
+
+                    trashcansAux = []
+                    for trashcan in trashcans:
+                        trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
+                    message_list_tcans = '; '.join(trashcansAux)
+
+                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
+                    send_to_truck(sendMessage)
+                    send_to_admin(sendMessage)    
                     # no json adicionar na mensagem para o caminhão a quantidade de lixo esvaziada da lixeira que é o 'message'
                 elif message_response.startswith("released"):
                     message_decode = json.loads(message)
@@ -135,7 +136,7 @@ def handle_client(connection, address):
                     
                     elif(message_route == "change-order-list"):
                         tcan_id = json.loads(message)["value"]
-                        index -1
+                        index = -1
                         for idx,i in trashcans:
                             if i[0] == tcan_id:
                                 index = idx
