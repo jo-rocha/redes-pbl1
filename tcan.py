@@ -73,6 +73,8 @@ def write():
                     aux = int(trashInput) + currentLoad
                     if aux > loadCapacity:
                         input('[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH. INPUT: "ok" TO RETURN]\n\n')
+                    elif lock == 1:
+                        input('[THE TRASHCAN IS BLOCKED. INPUT: "ok" TO RETURN]\n\n')
                     else: 
                         currentLoad = aux
                         sendMessage = encode_message_send("status","status",currentLoad,"POST",0)
