@@ -16,10 +16,13 @@ client.connect((constant.Host, constant.Port))
 def receive():
     global tcanList
     global listPrint
+    global currentLoad 
+    global loadCapacity
     #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
     try:
         while True:
             message = client.recv(1024).decode('ascii')
+            messageDecode = json.loads(message)
             message = decode_message_route(message)
 
             if message['header']['route'] == 'ID':
@@ -38,6 +41,15 @@ def receive():
 
             elif message['header']['route'] == 'set-list-tcans':#quando pega a lista ele faz a mensagem de rota e manda a rota para o admin
                 tcanList, listPrint = organize_tcan_list(message['value'])
+                if messageDecode['value2'] != None:#significa que a lixeira esvaziou e a quantidade de lixo foi enviada em value2
+                    aux = currentLoad + messageDecode['value2']
+                    if aux <= loadCapacity:
+                        currentLoad = aux
+                    else:
+                        #se a quantidade de lixo for passar a quantidade máxima do caminhão, o caminhão joga o lixo na estação
+                        messageSend = encode_message_send('dump', 'dump', currentLoad,'POST', 1)
+                        client.send(messageSend.encode('ascii'))
+                        currentLoad = 0
                 
             else:
                 print(f'{message}\n\n')
@@ -56,9 +68,11 @@ def write():
                 tcanTarget = tcanList[0]
                 tcanInfo = tcanTarget.split(',')
                 targetMessage = f'ID: {tcanInfo[0]}, LOAD: {tcanInfo[1]}, LOCKED:: {tcanInfo[2]}'
-                message = input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{targetMessage}\n[CHOOSE AN OPERATION]\n1-SHOW TRASHCAN LIST\n2-SHOW TRUCK LOAD\n\n\n\n\n')
+                message = input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{targetMessage}\n[CHOOSE AN OPERATION]\n1-SHOW TRASHCAN LIST\n2-TO UPDATE TRUCK STATUS\n\n\n\n\n')
                 if message == '1':
                     print(f'####################################\n       LIST OF TRASHCANS\n####################################\n{listPrint}\n####################################\n')
+                elif message == '2':
+                    pass
             else:
                 input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}]\n[THERE IS NO CONNECTED TRASHCAN YET. INPUT "OK" TO UPDATE STATUS]\n\n\n\n')
     except:
