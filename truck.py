@@ -58,7 +58,7 @@ def write():
                 targetMessage = f'ID: {tcanInfo[0]}, LOAD: {tcanInfo[1]}, LOCKED:: {tcanInfo[2]}'
                 message = input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{targetMessage}\n[CHOOSE AN OPERATION]\n1-SHOW TRASHCAN LIST\n2-SHOW TRUCK LOAD\n\n\n\n\n')
                 if message == '1':
-                    print(tcanList)
+                    print(f'####################################\n       LIST OF TRASHCANS\n####################################\n{listPrint}\n####################################\n')
             else:
                 input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}]\n[THERE IS NO CONNECTED TRASHCAN YET. INPUT "OK" TO UPDATE STATUS]\n\n\n\n')
     except:
