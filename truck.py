@@ -7,6 +7,7 @@ clientID = 'truck'
 currentLoad = 0
 loadCapacity = 500
 tcanList = None
+listPrint = None
 
 # Connection to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,6 +15,7 @@ client.connect((constant.Host, constant.Port))
 
 def receive():
     global tcanList
+    global listPrint
     #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
     try:
         while True:
@@ -35,7 +37,7 @@ def receive():
                     currentLoad = 0
 
             elif message['header']['route'] == 'set-list-tcans':#quando pega a lista ele faz a mensagem de rota e manda a rota para o admin
-                tcanList = organize_tcan_list(message['value'])
+                tcanList, listPrint = organize_tcan_list(message['value'])
                 
             else:
                 print(f'{message}\n\n')
@@ -51,7 +53,10 @@ def write():
         while True:
             # message = '{}'.format(input(''))
             if tcanList != None:
-                message = input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{tcanList}\n[CHOOSE AN OPERATION]\n1-SHOW TRASHCAN LIST\n2-SHOW TRUCK LOAD\n\n\n\n\n')
+                tcanTarget = tcanList[0]
+                tcanInfo = tcanTarget.split(',')
+                targetMessage = f'ID: {tcanInfo[0]}, LOAD: {tcanInfo[1]}, LOCKED:: {tcanInfo[2]}'
+                message = input(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{targetMessage}\n[CHOOSE AN OPERATION]\n1-SHOW TRASHCAN LIST\n2-SHOW TRUCK LOAD\n\n\n\n\n')
                 if message == '1':
                     print(tcanList)
             else:
@@ -75,9 +80,9 @@ def organize_tcan_list(list_tcansAux):
     message = ''
     for i in list:
         info_tcan = i.split(',')
-        message+= f'ID: {info_tcan[0]}, CAPACITY: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n'
+        message+= f'ID: {info_tcan[0]}, LOAD: {info_tcan[1]}, LOCKED:: {info_tcan[2]}\n'
 
-    return message
+    return list, message
 
 def encode_message_send(route,message,value,method,type):
     # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
