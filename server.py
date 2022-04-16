@@ -79,6 +79,7 @@ def handle_client(connection, address):
                     send_to_admin(sendMessage)
                     #mandar lista pro caminhão e para o admin
                 elif message_response.startswith('dumped'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
+                    message_decode = json.loads(message)
                     index = 0
                     for i in trashcans:
                         if i[0] == unitID:
@@ -93,7 +94,7 @@ def handle_client(connection, address):
                         trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
                     message_list_tcans = '; '.join(trashcansAux)
                     print(message_list_tcans)
-                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
+                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1, message_decode['value2'])
                     send_to_truck(sendMessage)
                     send_to_admin(sendMessage)    
                     # no json adicionar na mensagem para o caminhão a quantidade de lixo esvaziada da lixeira que é o 'message'
@@ -258,7 +259,7 @@ def decode_message_route(message):
 
     return result["header"]["route"]
 
-def encode_message_send(route,message,value,method,type):
+def encode_message_send(route,message,value,method,type, value2 = None):
     # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
     message = ""
     if type == 0:
@@ -267,7 +268,8 @@ def encode_message_send(route,message,value,method,type):
                 "typeResponse": route,
             },
             "value": value,
-            "message": message
+            "message": message,
+            "value2": value2
         }
     else:
         message = {
@@ -276,7 +278,8 @@ def encode_message_send(route,message,value,method,type):
                 "route": route,
             },
             "value": value,
-            "message": message
+            "message": message,
+            "value2": value2
         }
 
     return json.dumps(message)

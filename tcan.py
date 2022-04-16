@@ -96,7 +96,7 @@ def write():
             else:
                 toTruck = currentLoad # Guarda uma auxiliar 'toTruck' para quando a lixeira esvaziar mandar a carga para o caminhão
                 currentLoad = 0
-                sendMessage = encode_message_send("dumped","dumped",currentLoad,"POST",0)
+                sendMessage = encode_message_send("dumped","dumped",currentLoad,"POST",0, toTruck)
                 if int(ordem) < 0:
                     ordem = -2
                 client.send(sendMessage.encode('ascii'))
@@ -110,7 +110,7 @@ def decode_message_route(message):
 
     return result["header"]["route"]
 
-def encode_message_send(route,message,value,method,type):
+def encode_message_send(route,message,value,method,type, value2 = None):
     # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
     message = ""
     if type == 0:
@@ -119,7 +119,8 @@ def encode_message_send(route,message,value,method,type):
                 "typeResponse": route,
             },
             "value": value,
-            "message": message
+            "message": message,
+            "value2": value2
         }
     else:
         message = {
@@ -128,7 +129,8 @@ def encode_message_send(route,message,value,method,type):
                 "route": route,
             },
             "value": value,
-            "message": message
+            "message": message,
+            "value2": value2
         }
 
     return json.dumps(message)     
