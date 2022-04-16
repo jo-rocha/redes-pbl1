@@ -14,7 +14,8 @@ server.bind((constant.Host, constant.Port))
 # List for clients 
 clients = []
 trashcans = []
-orderedList = [] 
+orderedList = []
+order_priority = 0
 truck = None
 
 # Lida com as conexões dos clientes
@@ -34,6 +35,7 @@ def start():
 # Função responśavel por lidar com o cliente assim que ele se conecta com o servidor
 ##
 def handle_client(connection, address):
+    global order_priority
     message = encode_message_send("ID","","ID","GET",1)
 
     connection.send(message.encode('ascii'))
@@ -63,6 +65,8 @@ def handle_client(connection, address):
                             break
                         index += 1
                     trashcans[index][2] = message
+                    if int(trashcans[index][4]) < 0:
+                        trashcans[index][4] = -1
                     sort_ordered_list()
                     
                     trashcansAux = []
@@ -72,7 +76,7 @@ def handle_client(connection, address):
 
                     sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
                     send_to_truck(sendMessage)
-                    send_to_admin(sendMessage)    
+                    send_to_admin(sendMessage)
                     #mandar lista pro caminhão e para o admin
                 elif message_response.startswith('dumped'):# Se a lixeira foi esvaziada ela também manda uma mensagem com o tanto de lixo que ela tinha para poder enviar para atualizar o valor do caminhão
                     index = 0
@@ -81,6 +85,7 @@ def handle_client(connection, address):
                             break
                         index += 1
                     trashcans[index][2] = '0'
+                    trashcans[index][4] = -2
                     sort_ordered_list()
 
                     trashcansAux = []
@@ -95,6 +100,14 @@ def handle_client(connection, address):
                 elif message_response.startswith("released"):
                     message_decode = json.loads(message)
                     print(f'"[THE TRASHCAN IS {"BLOCKED" if message_decode["value"] == "1" else "RELEASED"}]"\n')
+                    trashcansAux = []
+                    for trashcan in trashcans:
+                        trashcansAux.append(f'{trashcan[0]},{trashcan[2]},{trashcan[3]}')
+                    message_list_tcans = '; '.join(trashcansAux)
+                    print(message_list_tcans)
+                    sendMessage = encode_message_send('set-list-tcans',message_list_tcans,message_list_tcans,"PUT",1)
+                    send_to_truck(sendMessage)
+                    send_to_admin(sendMessage)
                 elif message_response.startswith("get-tcans"):
                     pass
                 else:
@@ -120,6 +133,13 @@ def handle_client(connection, address):
                 
                 if message_target == "tcan":
                     send_to_trashcan(message)
+                    route = message_target = json.loads(message)["header"]["route"]
+                    if route == 'set-block':
+                        tcan_id = message_target = json.loads(message)["value"]
+                        for i in trashcans:
+                            if i[0] == tcan_id:
+                                i[3] = "0" if i[3] == "1" else "1"
+                                break
                 
                 elif message_target == "truck":
                     send_to_truck(message)
@@ -152,6 +172,7 @@ def handle_client(connection, address):
                         if index > -1:
                             tcan_temp = trashcans[index]
                             trashcans.pop(index)
+                            tcan_temp[4] = order_priority + 1
                             trashcans.insert(0,tcan_temp)
                             message_return = "ORDER UPDATED SUCCESSFULLY"
                         
@@ -164,7 +185,7 @@ def handle_client(connection, address):
                         
                         message = encode_message_send("set-list-tcans",message_return,message_list_tcans,"",1)
                         connection.send(message.encode('ascii'))
-                
+                        order_priority = order_priority + 1
                 else: 
                     print('[unspecified or unknown client]')
                     print('<message from admin>')
@@ -180,6 +201,7 @@ def handle_client(connection, address):
 def assign_tcan(connection):
     unitID = str(len(trashcans))
     lock = False
+    ordem = - 1
     message = encode_message_send("status","","status","GET","1")
     connection.send(message.encode('ascii'))
     message = connection.recv(1024).decode('ascii')
@@ -187,7 +209,7 @@ def assign_tcan(connection):
     if message_route.startswith('status'):
         message_decode = json.loads(message)
         status = message_decode["value"]# Corta o início da mensagem que é 'status:'
-        trashcans.append([unitID, connection, status, lock])
+        trashcans.append([unitID, connection, status, lock,-1])
     else: print('not getting the status of the trashcan')
     #retorna a posição em que este cliente foi colocado na lista de lixeiras para facilitar a atualização de seu status na função handle_tcan
     return unitID
@@ -197,6 +219,7 @@ def assign_tcan(connection):
 ##
 def sort_ordered_list():
     trashcans.sort(key = lambda x: int(x[2]), reverse = True)
+    trashcans.sort(key = lambda x: int(x[4]), reverse = True)
     for i in trashcans:
         print(f'\n{i[0]}, {i[2]}')
     #lembrar de chamar send_to_truck() quando terminar de atualizar a lista

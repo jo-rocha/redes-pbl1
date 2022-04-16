@@ -9,12 +9,15 @@ clientID = 'tcan'
 loadCapacity = 60
 currentLoad = 0
 lock = "0"
+ordem = -1
 # Connecting to Server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
 
 def receive():
     global currentLoad
+    global lock
+    global ordem
     try:
         while True:
             message = client.recv(1024).decode('ascii')
@@ -28,7 +31,8 @@ def receive():
                 currentLoad = 0
                 sendMessage = encode_message_send("TRASHCAN STATUS",sendMessage,currentLoad,"",0)
                 client.send(sendMessage.encode('ascii'))
-                
+                if int(ordem) < 0:
+                    ordem = -2
                 print(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity}]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n')
             
             elif messageRoute == 'status':
@@ -40,7 +44,10 @@ def receive():
                 #     lock = "0" 
                 # else:
                 #     lock = "1"
-                lock = "1"
+                # new_value =  abs(int(lock) - 1);
+                # lock = str(new_value)
+                print(f'Valor atual: {currentLoad}')
+                lock = "0" if lock == "1" else "1"
                 sendMessage = encode_message_send("released",lock,lock,"",0)
                 print(sendMessage)
                 client.send(sendMessage.encode('ascii'))
@@ -60,6 +67,7 @@ def receive():
 
 def write():
     global currentLoad
+    global ordem
     try:
         while True:
             # trashInput = input('[IF YOU WANT TO THROW TRASH IN THE TRASHCAN INPUT THE AMOUNT OF TRASH:]\n')
@@ -73,12 +81,15 @@ def write():
                     aux = int(trashInput) + currentLoad
                     if aux > loadCapacity:
                         input('[THE TRASHCAN CANNOT HOLD THIS AMOUNT OF TRASH. INPUT: "ok" TO RETURN]\n\n')
-                    elif lock == 1:
+                    elif lock == '1':
+                        print(currentLoad)
                         input('[THE TRASHCAN IS BLOCKED. INPUT: "ok" TO RETURN]\n\n')
                     else: 
                         currentLoad = aux
                         sendMessage = encode_message_send("status","status",currentLoad,"POST",0)
                         client.send(sendMessage.encode('ascii'))
+                        if int(ordem) < 0:
+                            ordem = -1
                 else:
                     print("""######################################################################\n#[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED!]#\n######################################################################
                     """)
@@ -86,6 +97,8 @@ def write():
                 toTruck = currentLoad # Guarda uma auxiliar 'toTruck' para quando a lixeira esvaziar mandar a carga para o caminhão
                 currentLoad = 0
                 sendMessage = encode_message_send("dumped","dumped",currentLoad,"POST",0)
+                if int(ordem) < 0:
+                    ordem = -2
                 client.send(sendMessage.encode('ascii'))
                 # Mandar a capacidade da lixeira antes de exvaziar
     except:
