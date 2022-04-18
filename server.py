@@ -248,8 +248,11 @@ def sort_ordered_list():
     trashcans.sort(key = lambda x: int(x[2]), reverse = True)
     # Ordenação pela ordem de prioridade
     trashcans.sort(key = lambda x: int(x[4]), reverse = True)
+    message =''
     for i in trashcans:
-        print(f'\n{i[0]}, {i[2]}')
+        # print(f'\n{i[0]}, {i[2]}')
+        message+= f'ID: {i[0]}, LOAD: {i[1]}, LOCKED:: {i[2]}\n'
+    print(f'####################################\n       LIST OF TRASHCANS\n####################################\n{message}\n####################################\n')
     #lembrar de chamar send_to_truck() quando terminar de atualizar a lista
 
 # Função responsável por enviar uma mensagem para o caminhão
