@@ -13,12 +13,15 @@ listPrint = None
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
 
+##
+# Essa função vai ser responsável por lidar com as mensagens que o caminhão vai receber dos outros clientes através do servidor
+##
 def receive():
     global tcanList
     global listPrint
     global currentLoad 
     global loadCapacity
-    #if the message received from the server is 'ID' we send the ID 'truck' if it is any other message from the trashcan we just print it
+    # Se o servidor mandar a mensagem 'ID' o caminhão vai mandar uma mensagem identificado que tipo de cliente ele é. No caso, 'truck'
     try:
         while True:
             message = client.recv(1024).decode('ascii')
@@ -29,6 +32,8 @@ def receive():
                 # client.send(clientID.encode('ascii'))
                 sendMessage = encode_message_send('ID', clientID, clientID, '', 0)
                 client.send(sendMessage.encode('ascii'))
+            # Quando a lixeira esvazia e manda a mensagem com a quantidade de lixo que foi esvaziado, o servidor encaminha essa mensagem para o caminhão
+            # e o caminhão adiciona a quantidade de lixo a sua carga. Se o caminhão chegar a quantidade limite ele esvazia sua carga na estação
             elif message['header']['route'] == 'dump':
                 aux = currentLoad + message['value']
                 if aux <= loadCapacity:
@@ -60,7 +65,7 @@ def receive():
         client.close()
 
 def write():
-    #the message will be the input of the user
+    # A interface do caminhão mostra a quantidade de carga atual no caminhão, e a lixeira que está na rota dele. Que no caso é a primeira lixeira da lista de prioridade de lixeiras
     try:
         while True:
             # message = '{}'.format(input(''))
@@ -84,6 +89,7 @@ def decode_message_route(message):
 
     return result
 
+#Organiza a lista de lixeiras em um padrão para ser mostrado na interface do caminhão, com o ID, a quantidade de lixo, e a informação de se a lixeira está trancada ou não
 def organize_tcan_list(list_tcansAux):
     if list_tcansAux.count(';') > 0:
         list = list_tcansAux.split(';')

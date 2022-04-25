@@ -14,6 +14,9 @@ ordem = -1
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((constant.Host, constant.Port))
 
+##
+# Essa função vai ser responsável por lidar com as mensagens que a lixeira vai receber dos outros clientes através do servidor
+##
 def receive():
     global currentLoad
     global lock
@@ -23,6 +26,8 @@ def receive():
             message = client.recv(1024).decode('ascii')
             messageRoute = decode_message_route(message)
 
+            # Assim que o client se conecta com o servidor, o servidor manda uma mensagem 'ID', e assim o cliente entende que ele tem que mandar uma mensagem identificando
+            # que tipo de cliente ele é (caminhão, lixeira ou admin)
             if messageRoute == 'ID':
                 sendMessage = encode_message_send("ID",clientID,clientID,"",0)
                 client.send(sendMessage.encode('ascii'))
@@ -64,17 +69,18 @@ def receive():
         print('[ERROR TRASHCAN]')
         client.close()
         return None
-
+##
+# Essa função é responsável por lidar com as funções da interface da lixeira. Ela vai lidar com a função de adicionar lixo na lixeira, e de esvaziar a lixeira
+##
 def write():
     global currentLoad
     global ordem
     try:
         while True:
-            # trashInput = input('[IF YOU WANT TO THROW TRASH IN THE TRASHCAN INPUT THE AMOUNT OF TRASH:]\n')
-            # currentLoad = currentLoad + int(trashInput)
-            # print(currentLoad)
-            # ##added
-            # client.send('message from the tcan'.encode('ascii'))
+            # O input do usuário pode ser um valor de lixo para ser adicionado na lixeira, ou 'dump' que é para esvaziar a lixeira.
+            # Se o input não for dump, a lixeira vai checar se a capacidade do input cabe na lixeira, e se ela está trancada. Se todas as requisições forem cumpridas
+            # o valor do input é adicionado a lixeira, e uma mensagem é enviada para o servidor com a nova quantidade de lixo da lixeira para a lista de lixeiras do 
+            # servidor ser atualizada
             trashInput = input(f'\n\n[THE TRASHCAN CURRENT LOAD IS: {currentLoad}/{loadCapacity} AND THE TRASHCAN IS {"BLOCKED" if lock == "1" else "RELEASED"} ]\n[INPUT THE AMOUNT OF TRASH YOU WANT TO THROW AT THE TRASHCAN:]\n\n')
             if trashInput != 'dump':
                 if currentLoad < loadCapacity:
@@ -93,6 +99,8 @@ def write():
                 else:
                     print("""######################################################################\n#[THE TRASHCAN IS FULL, YOU MUST WAIT FOR THE TRASHCAN TO BE EMPTIED!]#\n######################################################################
                     """)
+            # Se o input for 'dump' uma mensagem é enviada par o servidor com a quantidade atual da lixeira, e também é enviado a quantidade de lixo que foi esvaziada
+            # para o caminhão atulizar sua quantidade de lixo
             else:
                 toTruck = currentLoad # Guarda uma auxiliar 'toTruck' para quando a lixeira esvaziar mandar a carga para o caminhão
                 currentLoad = 0
@@ -100,7 +108,6 @@ def write():
                 if int(ordem) < 0:
                     ordem = -2
                 client.send(sendMessage.encode('ascii'))
-                # Mandar a capacidade da lixeira antes de exvaziar
     except:
         client.close()
         return None
@@ -110,6 +117,7 @@ def decode_message_route(message):
 
     return result["header"]["route"]
 
+# value2 é utilizado apenas quando a lixeira é esvaziada e é preciso mandar junto na mensagem a quantidade de lixo que havia na lixeira antes de a mesma ser esvaziada
 def encode_message_send(route,message,value,method,type, value2 = None):
     # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
     message = ""
