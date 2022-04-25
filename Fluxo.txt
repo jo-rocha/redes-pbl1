@@ -1,0 +1,22 @@
+# SERVIDOR
+Quando os clientes se conectam ao servidor uma nova thread é criada e o mesmo pede para eu os clientes de identifiquem mandando o seu ID(tcan, truck ou admin)
+
+
+Logo após isso, o servidor fica escutando as requisições dos clientes para que o servidor possa identificar a solicitação e fazer as devidas operações para atender 
+a solicitação.
+
+
+# CLIENTE
+
+De forma geral os clientes possuem duas funções principais receive e write cada uma rodando em uma thread diferente. A função write escuta as solicitações do comando
+na linha de comando e o receive fica escutando as solictações do servidor. Outra coisa em comum é que todas as lixeiras tem rotas para retornar o seu tipo.
+
+### LIXEIRA (TCAN)
+
+As requisições que as lixeiras recebem podem ser 
+
+- Trancar lixeira 
+- Esvaziar lixeira
+- Adicionar lixo
+- 
+
