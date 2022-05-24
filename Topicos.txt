@@ -2,21 +2,20 @@ Hieraquia de tópicos (EM CONSTRUÇÃO)
 
 
 - Estação seria uma subdivisão usada para mandar uma mensagem para todas as lixeiras daquela estação, dividindo as estações cadastradas no sistema
-- Lixeira seria uma subdivisão para diferenciar as diferenetes lixeiras cadastrada no sistema
 - Setor seria uma subdivisão para se comunicar com todo o sistema.
 
-setor/estacao{id}/lixeira{id}
+aplicacao/estacao{id}
 
 
 Exemplos:
-# setor/estacao1/lixeira1
-# setor/estacao1/lixeira2
-# setor/estacao1/lixeira3
-# 
-# setor/estacao2/lixeira1
-# setor/estacao2/lixeira2
-# setor/estacao2/lixeira3
-# 
-# setor/estacao3/lixeira1
-# setor/estacao3/lixeira2
-# setor/estacao3/lixeira3
+# aplicacao/estacao1
+# aplicacao/estacao2
+# aplicacao/estacao3
+
+
+
+Lista de tópicos
+
+conexao
+aplicacao/estacao{id}
+aplicacao/caminhao
