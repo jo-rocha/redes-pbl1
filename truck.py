@@ -67,3 +67,10 @@ def publish(client,msg,topic_name):
     
 def organize_tcan_list(msg):
     if msg['header']
+        # message = {
+        # "header": header, - cadastro, status
+        # "value": value, - quantidade de lixo atual
+        # "message": message,
+        # "message2":
+        # "value2": value2 - quantidade de lixo jogado fora
+        # } 
