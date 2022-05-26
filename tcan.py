@@ -14,7 +14,7 @@ loadCapacity = None
 currentLoad = random.randint(0, 1000)
 lock = None
 ordem = None
-controle_conexao = '0'
+
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
 port = 1883
@@ -47,7 +47,7 @@ def publish(client,msg,topic_name):
         # result: [0, 1]
         status = result[0]
         if status == 0:
-            print(f"Send `{msg}` to topic `{topic_name}`")
+            print(f"Sent `{msg}` to topic `{topic_name}`")
         else:
             print(f"Failed to send message to topic {topic_name}")
             print(result)
