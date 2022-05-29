@@ -64,13 +64,36 @@ def publish(client,msg,topic_name):
             print(f"Failed to send message to topic {topic_name}")
             print(result)
         msg_count += 1
-    
-def organize_tcan_list(msg):
-    if msg['header']
+
         # message = {
-        # "header": header, - cadastro, status
-        # "value": value, - quantidade de lixo atual
+        # "header": header, - cadastro, status,
+        # "value": value, - quantidade de lixo atual,
+        # "id": id,
+        # "setor": setorx,
         # "message": message,
-        # "message2":
-        # "value2": value2 - quantidade de lixo jogado fora
-        # } 
+        # }    
+def organize_tcan_list(msg):
+    global tcanList
+    if msg['header'] == 'cadastro':#cria um dicionário com as informações de cada lixeira
+        tcan = {}
+        tcan['id'] = msg['id']
+        tcan['setor'] = msg['setor']
+        tcan['currentLoad'] = msg['value']
+        tcanList.append(tcan)
+    elif msg['header'] == 'status':#a lixeira recebeu lixo e mandou seu status para o caminhão. O caminhão atualiza a lixeira e faz o resorting da lista
+        for i in tcanList:
+            if i['id'] == msg['id']:
+                i['currentLoad'] = msg['value']#atualiza o valor da lixeira na lista do caminhão
+                tcanList.sort(key = lambda x: int(x['currentLoad']), reverse = True)
+            
+#vai pegar a lixeira do topo da lista deprioridade e fazer o processo de ir até a lixeira e a esvaziar        
+def find_execute_route():
+    #Eu acredito que as mensgens da interface vão estar aqui. Pelo menos as mensagens de rota
+    global tcanList
+    goalTcan = tcanList.pop(0)
+    time.sleep(10)
+    client.publish(goalTcan['setor'], goalTcan['id'])#quando o caminhão chega na lixeira ele publica no tópico da lixeira e o payload é o id da lixeira a ser esvaziada
+    #quando ele esvazia a lixeira ele a coloca de volta no final da lista de lixeiras
+    goalTcan['currentLoad'] = 0
+    tcanList.append(goalTcan)
+
