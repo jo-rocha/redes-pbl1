@@ -1,6 +1,10 @@
+from ast import IsNot
+from ctypes.wintypes import tagRECT
 import paho.mqtt.client as mqtt
 import json
 import time
+import os
+import threading
 
 from pbl1.truck import organize_tcan_list
 
@@ -38,15 +42,10 @@ def on_connect(client, userdata, flags, rc):
 
 # Bloco responável por fazer uma ação quando receber uma mensagem
 def on_message(client, userdata, msg):
-    #print(msg.topic+" -  "+str(msg.payload))
-    global tcanList
-    global currentLoad
-    global loadCapacity
-    # msg = json.loads(msg.payload.decode())
-    # if msg['header'] == 'cadastro':
-    #     organize_tcan_list()
-    # elif msg['header'] == 'status':
-    #     pass
+    # global tcanList
+    # global currentLoad
+    # global loadCapacity
+    #O caminhao recebe mensgens quando uma lixeira é atualizada, então toda vez ele vai atualizar a lista de lixeiras
     organize_tcan_list(msg)
 
 
@@ -86,14 +85,26 @@ def organize_tcan_list(msg):
                 i['currentLoad'] = msg['value']#atualiza o valor da lixeira na lista do caminhão
                 tcanList.sort(key = lambda x: int(x['currentLoad']), reverse = True)
             
-#vai pegar a lixeira do topo da lista deprioridade e fazer o processo de ir até a lixeira e a esvaziar        
+#vai pegar a lixeira do topo da lista de prioridade e fazer o processo de ir até a lixeira e a esvaziar        
 def find_execute_route():
-    #Eu acredito que as mensgens da interface vão estar aqui. Pelo menos as mensagens de rota
     global tcanList
-    goalTcan = tcanList.pop(0)
-    time.sleep(10)
-    client.publish(goalTcan['setor'], goalTcan['id'])#quando o caminhão chega na lixeira ele publica no tópico da lixeira e o payload é o id da lixeira a ser esvaziada
-    #quando ele esvazia a lixeira ele a coloca de volta no final da lista de lixeiras
-    goalTcan['currentLoad'] = 0
-    tcanList.append(goalTcan)
+    global currentLoad
+    global loadCapacity
+    if tcanList:#se a lista nao estiver vazia
+        #[interface beginning]
+        os.system('cls||clear')
+        print(f'[THE TRUCK CURRENT LOAD IS {currentLoad}/{loadCapacity}\nAND IT IS HEADING TOWARDS THE TRASHCAN:{tcanList[0]}\n\n]')
+        #[interface end]
+        goalTcan = tcanList.pop(0)
+        time.sleep(10)
+        client.publish(goalTcan['setor'], goalTcan['id'])#quando o caminhão chega na lixeira ele publica no tópico da lixeira e o payload é o id da lixeira a ser esvaziada
+        #quando ele esvazia a lixeira ele a coloca de volta no final da lista de lixeiras
+        goalTcan['currentLoad'] = 0
+        tcanList.append(goalTcan)
+    else:
+        os.system('cls||clear')
+        print(f'[NO TRASHCANS REGISTERED IN THE SYSTEM YET]')
+
+find_execute_route_thread = threading.Thread(target = find_execute_route)
+find_execute_route_thread.start()
 
