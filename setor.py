@@ -54,9 +54,12 @@ def on_message(client, userdata, msg):
 
                 list_tcans.append(tcan)
                 value = {
-                    "id": str(id_tcan)
+                    "setor": data_message['value']['setor'],
+                    "id": str(id_tcan),
+                    "value": data_message['value']['currentLoad']
                 }
                 send_message('return_id_tcan',value,f'sector/sector{id_sector}/lixeira')
+                send_message('cadastro', value, f'truck')#manda para o caminhão adicionar a lixeira nova
 
         elif data_message['header'] == 'update_data':
             for tcan in list_tcans:
@@ -88,6 +91,8 @@ def send_message(route,value,topic):
     
     message = json.dumps(message)
     publish(client,message,topic)
+
+
 
 # Bloco responsável por iniciar o client mqtt
 def startConection():
