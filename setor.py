@@ -30,17 +30,20 @@ def on_connect(client, userdata, flags, rc):
     
     # O subscribe fica no on_connect pois, caso perca a conexão ele a renova
     # Lembrando que quando usado o #, você está falando que tudo que chegar após a barra do topico, será recebido
-    client.subscribe('connection')
+    client.subscribe('connection/teste')
     client.subscribe(topic_sector)
 
 # Bloco responável por fazer uma ação quando receber uma mensagem
 def on_message(client, userdata, msg):
+    print('Entrou')
+    
     global id_sector
-
-    data_message = json.loads(msg)
+    msg_temp = str(msg.payload)
+    
+    data_message = json.loads(msg.payload.decode())
+    
     if id_sector == data_message['value']['setor']:
         if data_message['header'] == 'connection':
-            # Adicionar lixeira na lista de lixeira e mandar o id dela de volta para a lixeira
                 global list_tcans
                 id_tcan = len(list_tcans) + 1
                 
@@ -51,12 +54,11 @@ def on_message(client, userdata, msg):
 
                 list_tcans.append(tcan)
                 value = {
-                    'id': id_tcan
+                    "id": str(id_tcan)
                 }
                 send_message('return_id_tcan',value,f'sector/sector{id_sector}/lixeira')
 
         elif data_message['header'] == 'update_data':
-            # Atualizar dados da lixeira indicada no topic. Salvar os dados em um arquivo ou mandar essa informação via API
             for tcan in list_tcans:
                 if tcan['id'] == data_message['value']['id']:
                     tcan['currentLoad'] = data_message['value']['currentLoad']
@@ -78,11 +80,13 @@ def publish(client,msg,topic_name):
         print(result)
 
 def send_message(route,value,topic):
+    
     message = {
         "header":route,
         "value": value,
     }
-
+    
+    message = json.dumps(message)
     publish(client,message,topic)
 
 # Bloco responsável por iniciar o client mqtt
@@ -96,11 +100,15 @@ def startConection():
     id_sector = request;
 
     client.on_connect = on_connect
-    client.connect(broker, port)
-    client.loop_start()
+    client.on_message = on_message
+    client.connect(broker, port,60)
+    
+    while True:
+        # client.subscribe('connection/teste')
+        client.loop_start()
 
-    receive_thread = threading.Thread(target = on_message)
-    receive_thread.start()
+    # receive_thread = threading.Thread(target = on_message)
+    # receive_thread.start()
     
 
 # Connecting to Server
