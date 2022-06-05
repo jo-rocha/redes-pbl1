@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from cgitb import reset
 import json
 from operator import truediv
 import paho.mqtt.client as mqtt
@@ -15,14 +16,15 @@ loadCapacity = None
 currentLoad = random.randint(0, 1000)
 lock = None
 ordem = None
-
+id = None
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
 port = 1883
-topic = "conexao"
+topic = "connection"
+topic_sector = None
+topic_lixeira = ''
 client = mqtt.Client()
 
-topic_station = ''
 
 # Bloco responsável pelo processo de subscribe em um tópico.
 def on_connect(client, userdata, flags, rc):  
@@ -34,36 +36,64 @@ def on_connect(client, userdata, flags, rc):
     
     # O subscribe fica no on_connect pois, caso perca a conexão ele a renova
     # Lembrando que quando usado o #, você está falando que tudo que chegar após a barra do topico, será recebido
-    client.subscribe(topic_station)
+    client.subscribe(topic_lixeira)
 
 # Bloco responável por fazer uma ação quando receber uma mensagem
 def on_message(client, userdata, msg):
     global currentLoad
     global lock
-    data_message = json.loads(msg);
-    currentLoad = data_message['value']
-    lock = data_message['lock']
+    global id
+    
+    data_message = json.loads(msg)
+    if data_message['header'] == 'return_id_tcan':
+        if id == None:
+            id = data_message['value']['id']
+    
+    elif data_message['header'] == 'update_data':
+        if data_message['value']['id'] == id:
+            currentLoad = data_message['value']['currentLoad']
+            lock = data_message['value']['lock']
     
     print(msg.topic+" -  "+str(msg.payload))
 
 
 def publish(client,msg,topic_name):
-    msg_count = 0
-    while True:
-        time.sleep(1)
-        # msg = f"messages: {msg_count}"
-        result = client.publish(topic_name, msg,True)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Sent `{msg}` to topic `{topic_name}`")
-        else:
-            print(f"Failed to send message to topic {topic_name}")
-            print(result)
-        msg_count += 1
+    time.sleep(1)
+    # msg = f"messages: {msg_count}"
+    result = client.publish(topic_name, msg,True)
+    # result: [0, 1]
+    status = result[0]
+    if status == 0:
+        print(f"Sent `{msg}` to topic `{topic_name}`")
+    else:
+        print(f"Failed to send message to topic {topic_name}")
+        print(result)
+
+def send_message(route,value,topic):
+    message = {
+        "header":route,
+        "value": value,
+    }
+
+    publish(client,message,topic)
+
+def generate_trash():
+    global currentLoad
+
+    trash = random.randint(0, 100)
+    currentLoad = currentLoad + trash
 
 # Bloco responsável por iniciar o client mqtt
 def startConection():
+    global topic_sector
+    global currentLoad
+    global lock
+
+    request = input('What is the trash sector?')
+    topic_sector = f'sector/sector{request}'
+    topic_lixeira = f'sector/sector{request}/lixeira'
+    
+    client.subscribe(topic_lixeira)
     
     client.on_connect = on_connect
     client.connect(broker, port)
@@ -73,9 +103,13 @@ def startConection():
     receive_thread.start()
     
 
-    mac = ':'.join(("%012X" % get_mac())[i:i+2] for i in range(0, 12, 2))
+    value = {
+        'setor':request,
+        'currentLoad':currentLoad,
+        'lock':lock
+    }
     
-    publish(client,"{'ID':'tcan','MAC':'" + mac + "'}",topic)
+    send_message('connection',value,topic)
     
 
 # Connecting to Server

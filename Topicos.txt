@@ -16,6 +16,7 @@ Exemplos:
 
 Lista de tópicos
 
-conexao
-aplicacao/estacao{id}
-aplicacao/caminhao
+connection
+sector/sector{id}
+sector/sector{id}/lixeira
+truck
