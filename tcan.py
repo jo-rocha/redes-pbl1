@@ -105,7 +105,7 @@ def startConection():
         "currentLoad":str(currentLoad),
         "lock":lock
     }
-    client.subscribe(topic_lixeira)
+    client.subscribe(topic_sector)
     send_message("connection",value,"connection/teste")
     while True:
         client.loop_start()

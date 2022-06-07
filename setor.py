@@ -39,7 +39,7 @@ def on_message(client, userdata, msg):
     
     global id_sector
     msg_temp = str(msg.payload)
-    
+
     data_message = json.loads(msg.payload.decode())
     
     if id_sector == data_message['value']['setor']:
@@ -58,7 +58,7 @@ def on_message(client, userdata, msg):
                     "id": str(id_tcan),
                     "value": data_message['value']['currentLoad']
                 }
-                send_message('return_id_tcan',value,f'sector/sector{id_sector}/lixeira')
+                send_message('return_id_tcan',value,f'sector/sector{id_sector}')
                 send_message('cadastro', value, f'truck')#manda para o caminhão adicionar a lixeira nova
 
         elif data_message['header'] == 'update_data':
