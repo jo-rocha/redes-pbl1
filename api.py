@@ -28,3 +28,8 @@ def get_sectores():
 def get_tcans():
     # Retonar as lixeiras cadastradas no sistema
     pass
+
+@app.route('/get-tcan')
+def get_tcan():
+    # Retonar as lixeiras cadastradas no sistema
+    pass

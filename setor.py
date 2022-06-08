@@ -102,7 +102,7 @@ def startConection():
 
     request = input('What is the number sector?')
     topic_sector = f'sector/sector{request}'
-    id_sector = request;
+    id_sector = request
 
     client.on_connect = on_connect
     client.on_message = on_message

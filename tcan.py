@@ -13,7 +13,7 @@ clientID = 'tcan'
 
 # Trashcan attributes
 loadCapacity = None
-currentLoad = random.randint(0, 1000)
+currentLoad = random.randint(0, 100)
 lock = '1'
 ordem = None
 id = None
