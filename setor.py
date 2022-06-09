@@ -66,15 +66,12 @@ def on_message(client, userdata, msg):
                 send_message('cadastro', value, f'truck')#manda para o caminhão adicionar a lixeira nova
 
         elif data_message['header'] == 'update_data':
-            tcans = list()
             for tcan in list_tcans:
                 if tcan['id'] == data_message['value']['id']:
                     tcan['currentLoad'] = data_message['value']['currentLoad']
                     tcan['lock'] = data_message['value']['lock']
                     tcans.append(json.dumps(tcan) + '\n')
-            arquivo = open(f'setor{id_sector}.txt', 'w')
-            arquivo.writelines(tcans)
-            arquivo.close
+
     print(msg.topic+" -  "+str(msg.payload))
 
 

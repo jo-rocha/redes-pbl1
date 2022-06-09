@@ -1,0 +1,5 @@
+{"setor": "1", "currentLoad": "57", "lock": "1", "id": "1"}
+{"setor": "1", "currentLoad": "80", "lock": "1", "id": "2"}
+{"setor": "1", "currentLoad": "50", "lock": "1", "id": "3"}
+{"setor": "1", "currentLoad": "60", "lock": "1", "id": "4"}
+{"setor": "1", "currentLoad": "10", "lock": "1", "id": "5"}

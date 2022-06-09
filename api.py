@@ -5,8 +5,12 @@
 # 
 # flask run
 from flask import Flask
+from flask import request
+import json
 
 app = Flask(__name__)
+arquivo = open("listOfTcans.txt", "r")
+
 
 @app.route('/')
 def hello_world():
@@ -15,8 +19,22 @@ def hello_world():
 
 @app.route('/list-tcans')
 def list_tcans():
-    # Retornar x lixeiras indicadas pelo adm
-    pass
+    global arquivo
+    number_lixeiras = json.loads(request.data)['qtd']
+    tcans = arquivo.readlines()
+    # tcans = []
+    tcans_temp = list()
+    
+    index = 0
+    for tcan in tcans:
+        tcans_temp.append(tcan)
+        
+        if(index == (number_lixeiras-1)):
+            break
+
+        index = index + 1 
+    
+    return str(tcans_temp) 
 
 
 @app.route('/get-sectores')
