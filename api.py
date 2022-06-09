@@ -7,6 +7,8 @@
 from flask import Flask
 from flask import request
 import json
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 app = Flask(__name__)
 arquivo = open("listOfTcans.txt", "r")
@@ -20,7 +22,9 @@ def hello_world():
 @app.route('/list-tcans')
 def list_tcans():
     global arquivo
-    number_lixeiras = json.loads(request.data)['qtd']
+    # number_lixeiras = json.loads(request.data)['qtd']
+    args = request.args
+    number_lixeiras = args.get('number')
     tcans = arquivo.readlines()
     # tcans = []
     tcans_temp = list()

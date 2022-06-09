@@ -2,6 +2,7 @@ import time
 import os
 import threading
 import json
+from unicodedata import numeric
 import requests
 
 #The idea fo the admin is to have an input interface. The functionalities will be:
@@ -16,7 +17,8 @@ def execute_interface():
         os.system('cls||clear')
         numberOfTcans = input("[INPUT THE NUMBER OF TRASHCANS YOU WANT TO TRACK:]\n")
         #manda o request para pegar a lista de lixeiras críticas
-        response = requests.get("http:/localhost:5000/list-tcans")
+        payload = {'number': f'{numberOfTcans}'}
+        response = requests.get(f"http:/localhost:5000/list-tcans?number={numberOfTcans}")
         tcanList = json.loads(response.content)
         while True: #aqui eu coloquei um while true imaginando a seguinte lógica: ao mostrar a lista de lixeiras o admin pode selecionar uma lixeira específica
                     #para mostrar mais dados, só que quando ele sair da tela de uma lixeira específica para não atualizar a lista e ele perder a que já tinha,
