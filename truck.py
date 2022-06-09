@@ -80,11 +80,22 @@ def organize_tcan_list(msg):
         tcan['setor'] = msg['value']['setor']
         tcan['currentLoad'] = msg['value']['value']
         tcanList.append(tcan)
+        #mandar para o arquivo
+        file = open('listOfTcans.txt', 'a')
+        file.write(json.dumps(tcan) + '\n')
+        file.close()
     elif msg['header'] == 'status':#a lixeira recebeu lixo e mandou seu status para o caminhão. O caminhão atualiza a lixeira e faz o resorting da lista
+        tcansAux = list()
         for i in tcanList:
             if i['id'] == msg['value']['id']:
                 i['currentLoad'] = msg['value']['value']#atualiza o valor da lixeira na lista do caminhão
                 tcanList.sort(key = lambda x: int(x['currentLoad']), reverse = True)
+            tcansAux.append(json.dumps(i) + '\n')
+        #mandar para o arquivo
+        file = open('listOfTcans.txt', 'w')
+        file.writelines((tcansAux))
+        file.close()
+                
             
 #vai pegar a lixeira do topo da lista de prioridade e fazer o processo de ir até a lixeira e a esvaziar        
 def find_execute_route():
