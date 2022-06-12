@@ -9,7 +9,7 @@ import threading
 # from pbl1.truck import organize_tcan_list
 
 currentLoad = 0
-loadCapacity = 150
+loadCapacity = 200
 tcanList = []
 
 clientID = 'truck'
@@ -51,26 +51,34 @@ def on_message(client, userdata, msg):
 
 def publish(client,msg,topic_name):
     msg_count = 0
-    while True:
-        time.sleep(1)
-        # msg = f"messages: {msg_count}"
-        result = client.publish(topic_name, msg)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Sent `{msg}` to topic `{topic_name}`")
-        else:
-            print(f"Failed to send message to topic {topic_name}")
-            print(result)
-        msg_count += 1
+    time.sleep(1)
+    # msg = f"messages: {msg_count}"
+    result = client.publish(topic_name, msg)
+    # result: [0, 1]
+    status = result[0]
+    if status == 0:
+        print(f"Sent `{msg}` to topic `{topic_name}`")
+    else:
+        print(f"Failed to send message to topic {topic_name}")
+        print(result)
+    msg_count += 1
 
-        # message = {
-        # "header": header, - cadastro, status,
-        # "value": value, - quantidade de lixo atual,
-        # "id": id,
-        # "setor": setorx,
-        # "message": message,
-        # }    
+    # message = {
+    # "header": header, - cadastro, status,
+    # "value": value, - quantidade de lixo atual,
+    # "id": id,
+    # "setor": setorx,
+    # "message": message,
+    # }    
+
+def send_message(value, header, topic):
+    msg = {
+        "header":header,
+        "value": value
+    }
+    msg = json.dumps(msg)
+    publish(client, msg, topic)
+
 def organize_tcan_list(msg):
     global tcanList
     msg = json.loads(msg.decode())
@@ -121,13 +129,30 @@ def find_execute_route():
                 currentLoad = 0 
                 time.sleep(5)
             else:
-                tcanList.pop(0)#já que eu já pego o topo na linha 100
-                time.sleep(5)
-                client.publish(goalTcan['setor'], goalTcan['id'])#quando o caminhão chega na lixeira ele publica no tópico da lixeira e o payload é o id da lixeira a ser esvaziada
-                #quando ele esvazia a lixeira ele a coloca de volta no final da lista de lixeiras
-                currentLoad += int(goalTcan['currentLoad'])
-                goalTcan['currentLoad'] = 0
-                tcanList.append(goalTcan)
+                if goalTcan['currentLoad'] != 0:
+                    tcanList.pop(0)#já que eu já pego o topo na linha 100
+                    time.sleep(5)
+                    # client.publish(f'sector/sector{goalTcan["setor"]}', goalTcan['id'])#quando o caminhão chega na lixeira ele publica no tópico da lixeira e o payload é o id da lixeira a ser esvaziada
+                    value = {
+                        "currentLoad": 0,
+                        "id": goalTcan['id'],
+                        "lock": 0,
+                        "setor": goalTcan['setor']
+                    }
+                    send_message(value, 'update_data', f'sector/sector{goalTcan["setor"]}')
+                    #quando ele esvazia a lixeira ele a coloca de volta no final da lista de lixeiras
+                    currentLoad += int(goalTcan['currentLoad'])
+                    goalTcan['currentLoad'] = 0
+                    tcanList.append(goalTcan)
+                    #manda para o arquivo
+                    tcansAux = list()
+                    for i in tcanList:
+                        tcansAux.append(json.dumps(i) + '\n')
+                    #mandar para o arquivo
+                    file = open('listOfTcans.txt', 'w')
+                    file.writelines((tcansAux))
+                    file.close()
+                    #manda para o arquivo
         else:
             time.sleep(5)
             os.system('cls||clear')
