@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
 app = Flask(__name__)
-arquivo = open("listOfTcans.txt", "r")
+
 
 
 @app.route('/')
@@ -21,23 +21,26 @@ def hello_world():
 
 @app.route('/list-tcans')
 def list_tcans():
-    global arquivo
+    arquivo = open("listOfTcans.txt", "r")
     # number_lixeiras = json.loads(request.data)['qtd']
     args = request.args
-    number_lixeiras = args.get('number')
+    number_lixeiras = int(args.get('number'))
     tcans = arquivo.readlines()
     # tcans = []
-    tcans_temp = list()
+    tcans_temp = ''
     
     index = 0
     for tcan in tcans:
-        tcans_temp.append(tcan)
+        tcans_temp += str(tcan) + '|'
         
         if(index == (number_lixeiras-1)):
             break
 
         index = index + 1 
-    
+    arquivo.close()
+    aux_len = len(tcans_temp)
+    aux_len = aux_len - 1
+    tcans_temp = tcans_temp[0:aux_len]
     return str(tcans_temp) 
 
 
