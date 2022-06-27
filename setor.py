@@ -6,6 +6,7 @@ import random
 import time
 from uuid import getnode as get_mac
 import threading
+import socket
 
 clientID = 'sector'
 
@@ -19,6 +20,9 @@ port = 1883
 topic_sector = None
 client = mqtt.Client()
 
+# Connecting to Server
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('26.241.233.14', 8080)) #host e porta dinamica
 
 # Bloco responsável pelo processo de subscribe em um tópico.
 def on_connect(client, userdata, flags, rc):  
@@ -62,8 +66,8 @@ def on_message(client, userdata, msg):
                 arquivo = open(f'setor{id_sector}.txt', 'a')
                 arquivo.write(json.dumps(value) + '\n')
                 arquivo.close
-                send_message('return_id_tcan',value,f'sector/sector{id_sector}')
-                send_message('cadastro', value, f'truck')#manda para o caminhão adicionar a lixeira nova
+                send_message('return_id_tcan',value,f'sector/sector{id_sector}/lixeira{str(id_tcan)}')
+                send_message('cadastro', value, f'truck')
 
         elif data_message['header'] == 'update_data':
             for tcan in list_tcans:
@@ -96,7 +100,37 @@ def send_message(route,value,topic):
     message = json.dumps(message)
     publish(client,message,topic)
 
+def receive():
+    try:
+        while True:
+            message = client.recv(1024).decode('ascii')
+            messageRoute = decode_message_route(message)
 
+            if messageRoute == 'ID':
+                sendMessage = encode_message_send("ID",clientID,clientID,"",0)
+                client.send(sendMessage.encode('ascii'))
+            
+    except:
+        print('[ERROR SECTOR]')
+        client.close()
+        return None
+
+def decode_message_route(message):
+    result = json.loads(message)
+
+    return result["header"]["route"]
+
+def encode_message_send(route,message,value):
+    # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
+    message = {
+        "header":{
+            "route": route,
+        },
+        "value": value,
+        "message": message,
+    }
+
+    return json.dumps(message)  
 
 # Bloco responsável por iniciar o client mqtt
 def startConection():

@@ -17,6 +17,9 @@ currentLoad = random.randint(0, 100)
 lock = '1'
 ordem = None
 id = None
+sector_id = 0
+reserved = 0
+
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
 port = 1883
@@ -36,32 +39,32 @@ def on_connect(client, userdata, flags, rc):
     
     # O subscribe fica no on_connect pois, caso perca a conexão ele a renova
     # Lembrando que quando usado o #, você está falando que tudo que chegar após a barra do topico, será recebido
-    # client.subscribe(topic_lixeira)
 
 # Bloco responável por fazer uma ação quando receber uma mensagem
 def on_message(client, userdata, msg):
     global currentLoad
     global lock
     global id
-    
+    global sector_id
+
     data_message = json.loads(msg.payload.decode())
     if data_message['header'] == 'return_id_tcan':
         if id == None:
             id = data_message['value']['id']
+            topic_lixeira = f'sector/sector{sector_id}/lixeira{id}'
+            client.subscribe(topic_lixeira)
     
     elif data_message['header'] == 'update_data':
-        if data_message['value']['id'] == id:
-            currentLoad = data_message['value']['currentLoad']
-            lock = data_message['value']['lock']
+        # if data_message['value']['id'] == id:
+        currentLoad = data_message['value']['currentLoad']
+        lock = data_message['value']['lock']
     
     print(msg.topic+" -  "+str(msg.payload))
 
 
 def publish(client,msg,topic_name):
     time.sleep(1)
-    # msg = f"messages: {msg_count}"
     result = client.publish(topic_name, msg,True)
-    # result: [0, 1]
     status = result[0]
     if status == 0:
         print(f"Sent `{msg}` to topic `{topic_name}`")
@@ -91,10 +94,10 @@ def startConection():
     global topic_sector
     global currentLoad
     global lock
-
+    global sector_id
     request = input('What is the trash sector?')
     topic_sector = f'sector/sector{request}'
-    topic_lixeira = f'sector/sector{request}/lixeira'
+    sector_id = request
     
     
     client.on_connect = on_connect
@@ -109,15 +112,6 @@ def startConection():
     send_message("connection",value,"connection/teste")
     while True:
         client.loop_start()
-
-    # receive_thread = threading.Thread(target = on_message)
-    # receive_thread.start()
-    
-
-    
-
-# Connecting to Server
-# client = startConection()
 
 
 if __name__ == '__main__':
