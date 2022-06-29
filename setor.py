@@ -13,6 +13,7 @@ clientID = 'sector'
 list_tcans = []
 ordem = None
 id_sector = None
+elected_sector = None
 
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
@@ -21,8 +22,77 @@ topic_sector = None
 client = mqtt.Client()
 
 # Connecting to Server
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('26.241.233.14', 8080)) #host e porta dinamica
+client_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Cliente
+client_server.connect(('26.241.233.14', 8080))
+# Servidor
+client_server.bind(('26.241.233.14', 3000))
+##################################### BLOCO SOCKET #####################################
+
+def receive():
+    global elected_sector
+    global id_sector
+    try:
+        while True:
+            message = client.recv(1024).decode('ascii')
+            messageRoute = decode_message_route(message)
+            
+            # Rota para reservar lixeira
+            if messageRoute == 'reserveTcan':
+                messageResponse = json.loads(message)["value"]
+                if messageResponse['id_sector'] == id_sector:
+                    # reserva a lixeira
+                    pass
+                else:
+                    # manda a requisição para outro setor
+                    pass
+                pass
+            
+            # Rota para esvaziar lixeira
+            if messageRoute == 'dumpTcan':
+                pass
+
+            # Rota que indica qual é o setor eleito
+            if messageRoute == 'setElectedSector':
+                messageResponse = json.loads(message)["value"]
+                elected_sector = messageResponse["id"]
+
+            # Retornar rota de lixeiras
+            if messageRoute == 'getTcansRoute':
+                pass
+
+    except:
+        print('[ERROR SECTOR]')
+        client.close()
+        return None
+
+def write():
+    try:
+        while True:
+            # Verificar se o setor vai ter alguma entrada pelo terminal
+            pass
+    except:
+        client.close()
+        return None
+
+def decode_message_route(message):
+    result = json.loads(message)
+
+    return result["header"]["route"]
+
+
+def encode_message_send(route,message,value):
+    message = {
+        "header":{
+            "route": route,
+        },
+        "value": value,
+        "message": message
+    }
+    
+    return json.dumps(message)
+
+##################################### BLOCO MQTT #####################################
 
 # Bloco responsável pelo processo de subscribe em um tópico.
 def on_connect(client, userdata, flags, rc):  
@@ -78,7 +148,6 @@ def on_message(client, userdata, msg):
 
     print(msg.topic+" -  "+str(msg.payload))
 
-
 def publish(client,msg,topic_name):
     
     time.sleep(1)
@@ -100,38 +169,6 @@ def send_message(route,value,topic):
     message = json.dumps(message)
     publish(client,message,topic)
 
-def receive():
-    try:
-        while True:
-            message = client.recv(1024).decode('ascii')
-            messageRoute = decode_message_route(message)
-
-            if messageRoute == 'ID':
-                sendMessage = encode_message_send("ID",clientID,clientID,"",0)
-                client.send(sendMessage.encode('ascii'))
-            
-    except:
-        print('[ERROR SECTOR]')
-        client.close()
-        return None
-
-def decode_message_route(message):
-    result = json.loads(message)
-
-    return result["header"]["route"]
-
-def encode_message_send(route,message,value):
-    # se type igual a 0 é um send que responde uma requisição e de for 1 é um send que envia um requisição
-    message = {
-        "header":{
-            "route": route,
-        },
-        "value": value,
-        "message": message,
-    }
-
-    return json.dumps(message)  
-
 # Bloco responsável por iniciar o client mqtt
 def startConection():
     
@@ -146,16 +183,15 @@ def startConection():
     client.on_message = on_message
     client.connect(broker, port,60)
     
+    receive_thread = threading.Thread(target = receive)
+    receive_thread.start()
+
+    write_thread = threading.Thread(target = write)
+    write_thread.start()
+
     while True:
         # client.subscribe('connection/teste')
         client.loop_start()
-
-    # receive_thread = threading.Thread(target = on_message)
-    # receive_thread.start()
-    
-
-# Connecting to Server
-# client = startConection()
 
 
 if __name__ == '__main__':
