@@ -1,13 +1,15 @@
 from asyncio.windows_events import NULL
 import json
 from operator import truediv
+from urllib import response
 import paho.mqtt.client as mqtt
-import random
 import time
 from uuid import getnode as get_mac
 import threading
-import socket
-
+from flask import Flask
+from flask import request
+import json
+import threading
 clientID = 'sector'
 
 list_tcans = []
@@ -17,80 +19,74 @@ elected_sector = None
 
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
-port = 1883
+port_mqtt = 1883
 topic_sector = None
 client = mqtt.Client()
 
-# Connecting to Server
-client_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Cliente
-client_server.connect(('26.241.233.14', 8080))
-# Servidor
-client_server.bind(('26.241.233.14', 3000))
-##################################### BLOCO SOCKET #####################################
-
-def receive():
-    global elected_sector
-    global id_sector
-    try:
-        while True:
-            message = client.recv(1024).decode('ascii')
-            messageRoute = decode_message_route(message)
-            
-            # Rota para reservar lixeira
-            if messageRoute == 'reserveTcan':
-                messageResponse = json.loads(message)["value"]
-                if messageResponse['id_sector'] == id_sector:
-                    # reserva a lixeira
-                    pass
-                else:
-                    # manda a requisição para outro setor
-                    pass
-                pass
-            
-            # Rota para esvaziar lixeira
-            if messageRoute == 'dumpTcan':
-                pass
-
-            # Rota que indica qual é o setor eleito
-            if messageRoute == 'setElectedSector':
-                messageResponse = json.loads(message)["value"]
-                elected_sector = messageResponse["id"]
-
-            # Retornar rota de lixeiras
-            if messageRoute == 'getTcansRoute':
-                pass
-
-    except:
-        print('[ERROR SECTOR]')
-        client.close()
-        return None
-
-def write():
-    try:
-        while True:
-            # Verificar se o setor vai ter alguma entrada pelo terminal
-            pass
-    except:
-        client.close()
-        return None
-
-def decode_message_route(message):
-    result = json.loads(message)
-
-    return result["header"]["route"]
+##################################### API #####################################
+FLASK_ENV = "development"
+FLASK_APP = "setor"
+port_api = 8080
+app = Flask(__name__)
+app.config.from_object(__name__)
+app.config.from_envvar('FLASK_ENV', silent=True)
+app.config.from_envvar('FLASK_APP', silent=True)
 
 
-def encode_message_send(route,message,value):
-    message = {
-        "header":{
-            "route": route,
-        },
-        "value": value,
-        "message": message
-    }
+# Função para retormar as x lixeiras mais criticas
+@app.route('/list-tcans')
+def list_tcan():
+    args = request.args
+    number_tcans = int(args.get('number'))
+    sector = int(args.get('sector'))
+    status = False
+    list_tcans_temp = []
+    for x in range(number_tcans):
+        list_tcans_temp.append(list_tcans[x])
+        status = False
     
-    return json.dumps(message)
+    value = {
+        "status": status,
+        "data": list_tcans_temp,
+        "message": "Lixeiras resgatadas com sucesso" if status else "Erro ao resgatar lixeiras"
+    }
+
+    return "a"
+
+# Função para esvaziar lixeira
+@app.route('/dump-tcan')
+def dump_tcan():
+    args = request.args
+    sector = int(args.get('sector'))
+    id_tcan = int(args.get('sector'))
+    status = False
+    #É possivel solicitar para descartar o lixo da lixeira a partir de outro setor sem ser o qual o caminhão pertence?
+    if id_sector == sector:
+        # Realizar procedimento de descarte do lixo
+        pass
+    else:
+        # Procurar qual a porta da api do setor especificado na rota
+        pass
+    for tcan in list_tcans:
+        if tcan['id'] == id_tcan:
+            tcan['currentLoad'] = 0
+            value = {
+                "setor": sector,
+                "id": str(id_tcan),
+                "value": 0,
+            }
+            topic_lixeira = f'sector/sector{sector}/lixeira{id_tcan}'
+            send_message('update_data',value,topic_lixeira)
+            status = True
+    response = {
+        "status": status,
+        "message": "Lixeira esvaziada com sucesso" if status else "Erro ao esvaziar lixeira"
+    }
+    return json.dumps(response)
+
+def start_api():
+    global port_api
+    app.run(port=port_api)
 
 ##################################### BLOCO MQTT #####################################
 
@@ -144,7 +140,6 @@ def on_message(client, userdata, msg):
                 if tcan['id'] == data_message['value']['id']:
                     tcan['currentLoad'] = data_message['value']['currentLoad']
                     tcan['lock'] = data_message['value']['lock']
-                    tcans.append(json.dumps(tcan) + '\n')
 
     print(msg.topic+" -  "+str(msg.payload))
 
@@ -181,13 +176,10 @@ def startConection():
 
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect(broker, port,60)
+    client.connect(broker, port_mqtt,60)
     
-    receive_thread = threading.Thread(target = receive)
+    receive_thread = threading.Thread(target = start_api)
     receive_thread.start()
-
-    write_thread = threading.Thread(target = write)
-    write_thread.start()
 
     while True:
         # client.subscribe('connection/teste')

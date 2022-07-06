@@ -1,0 +1,70 @@
+# Connecting to Server
+client_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Cliente
+client_server.connect(('26.241.233.14', 8080))
+# Servidor
+client_server.bind(('26.241.233.14', 3000))
+##################################### BLOCO SOCKET #####################################
+
+def receive():
+    global elected_sector
+    global id_sector
+    try:
+        while True:
+            message = client.recv(1024).decode('ascii')
+            messageRoute = decode_message_route(message)
+            
+            # Rota para reservar lixeira
+            if messageRoute == 'reserveTcan':
+                messageResponse = json.loads(message)["value"]
+                if messageResponse['id_sector'] == id_sector:
+                    # reserva a lixeira
+                    pass
+                else:
+                    # manda a requisição para outro setor
+                    pass
+                pass
+            
+            # Rota para esvaziar lixeira
+            if messageRoute == 'dumpTcan':
+                pass
+
+            # Rota que indica qual é o setor eleito
+            if messageRoute == 'setElectedSector':
+                messageResponse = json.loads(message)["value"]
+                elected_sector = messageResponse["id"]
+
+            # Retornar rota de lixeiras
+            if messageRoute == 'getTcansRoute':
+                pass
+
+    except:
+        print('[ERROR SECTOR]')
+        client.close()
+        return None
+
+def write():
+    try:
+        while True:
+            # Verificar se o setor vai ter alguma entrada pelo terminal
+            pass
+    except:
+        client.close()
+        return None
+
+def decode_message_route(message):
+    result = json.loads(message)
+
+    return result["header"]["route"]
+
+
+def encode_message_send(route,message,value):
+    message = {
+        "header":{
+            "route": route,
+        },
+        "value": value,
+        "message": message
+    }
+    
+    return json.dumps(message)
