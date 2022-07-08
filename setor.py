@@ -94,17 +94,20 @@ def dump_tcan():
 @app.route('/reserve-tcan')
 def reserve_tcan():
     global electionCounter
-    reserveTcanList = request.json()
+    global sectorList
+    # reserveTcanList = request.json() precisa testar se isso só já da o loads ou se por set um get eu tenho que pegar o payload antes
+    reserveTcanList = requests.args.get('tcanRequest')
     if sectorID == coordinator and electionCounter < 2:
-        electionCounter++
+        electionCounter+= 1
         pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
     elif electionCounter >= 2:
         callElection()
     else:
-        for i in reserveTcanList:
+        #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
+        for i in sectorList:
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
-        response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?sector={numberOfTcans}')
+        response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?tcanRequest={reserveTcanList}')
 
 #Bloco responsavel por atualizar o número de prioridade deste setor quando o entao coordenador chamar uma nova eleicao
 @app.route('/election')
@@ -118,6 +121,7 @@ def update_sector_list():
     global sectorList
     sectorList = requests.json()#TALVEZ PRECISE MUDAR CASO O JSON NÃO DE O LOADS JÁ
     return None
+    
 def start_api():
     global port_api
     app.run(port=port_api)
