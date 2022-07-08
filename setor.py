@@ -1,6 +1,6 @@
 from asyncio.windows_events import NULL
 import json
-from operator import truediv
+from operator import methodcaller, truediv
 from urllib import response
 import paho.mqtt.client as mqtt
 import time
@@ -10,12 +10,17 @@ from flask import Flask
 from flask import request
 import json
 import threading
+import random
+import requests
 clientID = 'sector'
 
 list_tcans = []
 ordem = None
-id_sector = None
-elected_sector = None
+sectorID = None
+coordinator = None
+sectorPriority = None
+electionCounter = 0
+sectorList = None
 
 # Configurações do client mqtt
 broker = 'mqtt.eclipseprojects.io'
@@ -61,7 +66,7 @@ def dump_tcan():
     id_tcan = int(args.get('sector'))
     status = False
     #É possivel solicitar para descartar o lixo da lixeira a partir de outro setor sem ser o qual o caminhão pertence?
-    if id_sector == sector:
+    if sectorID == sector:
         # Realizar procedimento de descarte do lixo
         pass
     else:
@@ -83,6 +88,22 @@ def dump_tcan():
         "message": "Lixeira esvaziada com sucesso" if status else "Erro ao esvaziar lixeira"
     }
     return json.dumps(response)
+
+#Funcao para reservar as lixeiras
+@app.route('/reserve-tcan')
+def reserve_tcan():
+    global electionCounter
+    reserveTcanList = request.json()
+    if sectorID == coordinator and electionCounter < 2:
+        electionCounter++
+        pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
+    elif electionCounter >= 2:
+        callElection()
+    else:
+        for i in reserveTcanList:
+            if i['secID'] == coordinator:
+                coordPort = i['secPort']
+        response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?sector={numberOfTcans}')
 
 def start_api():
     global port_api
@@ -107,12 +128,12 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     print('Entrou')
     
-    global id_sector
+    global sectorID
     msg_temp = str(msg.payload)
 
     data_message = json.loads(msg.payload.decode())
     
-    if id_sector == data_message['value']['setor']:
+    if sectorID == data_message['value']['setor']:
         if data_message['header'] == 'connection':
                 global list_tcans
                 id_tcan = len(list_tcans) + 1
@@ -129,10 +150,10 @@ def on_message(client, userdata, msg):
                     "value": data_message['value']['currentLoad'],
                     "lock": data_message['value']['lock']
                 }
-                arquivo = open(f'setor{id_sector}.txt', 'a')
+                arquivo = open(f'setor{sectorID}.txt', 'a')
                 arquivo.write(json.dumps(value) + '\n')
                 arquivo.close
-                send_message('return_id_tcan',value,f'sector/sector{id_sector}/lixeira{str(id_tcan)}')
+                send_message('return_id_tcan',value,f'sector/sector{sectorID}/lixeira{str(id_tcan)}')
                 send_message('cadastro', value, f'truck')
 
         elif data_message['header'] == 'update_data':
@@ -168,11 +189,11 @@ def send_message(route,value,topic):
 def startConection():
     
     global topic_sector
-    global id_sector
+    global sectorID
 
     request = input('What is the number sector?')
     topic_sector = f'sector/sector{request}'
-    id_sector = request
+    sectorID = request
 
     client.on_connect = on_connect
     client.on_message = on_message
@@ -188,3 +209,26 @@ def startConection():
 
 if __name__ == '__main__':
     startConection()
+
+##################################### ELEICAO #####################################
+
+def on_execution():
+    #quando o setor executa, ele vai enviar uma mensagem avisando a interface que ele está vivo, e vai sortear o seu numero de prioridade
+    #a interface vai entao retornar ao setor a lista de outros setores que estao vivos, se e que tem algum
+    global sectorPriority
+    global sectorID
+    global coordinator
+    global sectorList
+    sectorPriority = random.randint(0,100)
+    sectorList = requests.get(f'http://127.0.0.1:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={port_api}')#TEM QUE MUDR A PORTA
+    sectorList = sectorList.json()#TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
+    coordinator = sectorList[0]['sectorID']
+
+def callElection():
+    sectorPriority = random.randint(0,100)
+    for i in sectorList:
+        port = i['port_api']
+        #o setor que receber a mensagem vai resortear seu valor de prioridade e retornar no request
+        i['sectorPriority'] = requests.get(f'http://127.0.0.1:{port}/election')
+    #depois disso ele vai ordenar a nova lista de prioridade, atualizar o coordenador e enviar a nova lista para todos os outros setores
+    
