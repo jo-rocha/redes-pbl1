@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from crypt import methods
 import json
 from operator import methodcaller, truediv
 from urllib import response
@@ -104,6 +105,17 @@ def reserve_tcan():
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?sector={numberOfTcans}')
+
+#Bloco responsavel por atualizar o número de prioridade deste setor quando o entao coordenador chamar uma nova eleicao
+@app.route('/election')
+def update_priority():
+    global sectorPriority
+    sectorPriority = random.randint(0,100)
+    return sectorPriority
+
+@app.route('/update-sector-list', methods=['POST'])
+def update_sector_list():
+
 
 def start_api():
     global port_api
@@ -225,10 +237,20 @@ def on_execution():
     coordinator = sectorList[0]['sectorID']
 
 def callElection():
+    global sectorPriority
+    global coordinator
+    global sectorList
+
     sectorPriority = random.randint(0,100)
     for i in sectorList:
         port = i['port_api']
         #o setor que receber a mensagem vai resortear seu valor de prioridade e retornar no request
         i['sectorPriority'] = requests.get(f'http://127.0.0.1:{port}/election')
     #depois disso ele vai ordenar a nova lista de prioridade, atualizar o coordenador e enviar a nova lista para todos os outros setores
-    
+    sectorList.sort(key = lambda x: int(x['sectorPriority']))
+    coordinator = sectorList[0]['sectorID']
+    dumpedSectorList = json.dumps(sectorList)
+    for i in sectorList:
+        port = i['port_api']
+        response = request.post(f'http://127.0.0.1:{port}/update-sector-list', dumpedSectorList)
+        
