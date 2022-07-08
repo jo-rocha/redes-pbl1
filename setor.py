@@ -115,8 +115,9 @@ def update_priority():
 
 @app.route('/update-sector-list', methods=['POST'])
 def update_sector_list():
-
-
+    global sectorList
+    sectorList = requests.json()#TALVEZ PRECISE MUDAR CASO O JSON NÃO DE O LOADS JÁ
+    return None
 def start_api():
     global port_api
     app.run(port=port_api)
