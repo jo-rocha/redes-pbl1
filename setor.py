@@ -108,6 +108,7 @@ def reserve_tcan():
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?tcanRequest={reserveTcanList}')
+        #falta ainda lidar com o response
 
 #Bloco responsavel por atualizar o número de prioridade deste setor quando o entao coordenador chamar uma nova eleicao
 @app.route('/election')

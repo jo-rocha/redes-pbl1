@@ -10,6 +10,7 @@ from flask import request
 
 truckList = []
 sectorList = []
+truckIDCounter = 0
 ##################################### API #####################################
 FLASK_ENV = "development"
 FLASK_APP = "interface"
@@ -22,6 +23,8 @@ app.config.from_envvar('FLASK_APP', silent=True)
 @app.route('/inform-get-sectors')
 def addSector():
     global sectorList
+    global truckIDCounter
+    global truckList
     newSector = {}
     newSector['sectorID'] = requests.args.get('sectorID')
     newSector['sectorPriority'] = requests.args.get('sectorPriority')
@@ -29,11 +32,21 @@ def addSector():
     sectorList.append(newSector)
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     dumpedSectorList = json.dumps(sectorList)
+    ##criando novo caminhao start##
+    truck = {}
+    truckIDCounter+=1
+    truck['ID'] = truckIDCounter
+    truck['sector'] = newSector['sectorID']
+    truckList.append(truck)
+    #o caminhao vai ter mais os campos de numero de lixeiras requisitadas, lixeiras reservadas e numero de lixeiras requisitadas
+    ##criando novo caminhao end##
+
     #ordena a lista e manda para todos os servidores atualizarem
     for i in sectorList:
         if i['sectorID'] != newSector['sectorID']:
             port = i['api_port']
             response = requests.post(f'http://127.0.0.1:{port}/update-sector-list', {dumpedSectorList})
+    
     return dumpedSectorList
 
 ##################################### INTERFACE #####################################
@@ -46,7 +59,7 @@ def runInterface():
                 os.system('cls||clear')
                 print("#################################################")
                 for i in truckList:
-                    print(f"{i}\n")
+                    print(f"[TRUCK: {i['ID']}\n")
                 print("#################################################")
                 userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE REQUEST]\n")
                 if userInput == 's':
@@ -54,11 +67,9 @@ def runInterface():
                     break
                 else:
                     for i in truckList:
-                        if i['id'] == userInput:
-                            print(f"{i}\n")
-                            requestNumber = input("[HOW MANY TRASHCANS DO YOU WANT TO SEE?]\n")
+                        if i['ID'] == userInput:
+                            requestNumber = input("[HOW MANY TRASHCANS DO YOU WANT TO REQUEST?]\n")
                             i['requestNumber'] = requestNumber
-                            break
             while True:
                 os.system('cls||clear')
                 print("#################################################")
@@ -71,19 +82,42 @@ def runInterface():
                     break
                 else:
                     for i in truckList:
-                        if i['id'] == userInput:
+                        if i['ID'] == userInput:
                             requestList = i['requestList']
                             print("[THESE ARE THE TRASHCANS REQUESTED BY THE TRUCK]\n")
                             for j in requestList:
                                 print(f"{j}\n")
                                 
                             reserveList = []
-                            userInput = input("[SELECT WHICH TRASHCANS YOU WANT TO RESERVE BY THEIR IDs, SEPARATING THEM BY ',']\n")
+                            userInput = input("[SELECT WHICH TRASHCANS YOU WANT TO RESERVE. ENTER THE SECTOR ID FOLLOWED BY ',' THEN THE TRASHCAN ID\nTO SEPARATE ONE REQUEST FROM THE OTHER USE ';']\n")
+                            counter = 0
+                            dict = {}
+                            sectorAlreadyExists = [0, 0]
                             for k in userInput:
+                                sectorAlreadyExists[0] = 0
+                                if counter == 4: counter = 0                        
                                 if k == ',':
                                     pass
-                                else:
-                                    reserveList.append(i)
+                                elif k == ';':
+                                    pass
+                                elif counter == 0:   
+                                    for l in reserveList:
+                                        if l['sector'] == k:
+                                            sectorAlreadyExists[0] = 1
+                                            sectorAlreadyExists[1] = k
+                                    if sectorAlreadyExists[0] == 0:
+                                        dict['sector'] = k
+                                elif counter == 2:
+                                    if sectorAlreadyExists[0] == 1:
+                                        for m in reserveList:
+                                            if m['sector'] == sectorAlreadyExists[1]:
+                                                appendList = m['tcan']
+                                                appendList.append(k)
+                                    else:
+                                        list = []
+                                        list.append(k)
+                                        dict['tcan'] = list
+                                counter += 1
                             i['reserveList'] = reserveList
 
 runInterface()
