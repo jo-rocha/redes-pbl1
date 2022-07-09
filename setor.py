@@ -1,7 +1,8 @@
 from asyncio.windows_events import NULL
-from crypt import methods
+# from crypt import methods
 import json
 from operator import methodcaller, truediv
+import traceback
 from urllib import response
 import paho.mqtt.client as mqtt
 import time
@@ -32,7 +33,7 @@ client = mqtt.Client()
 ##################################### API #####################################
 FLASK_ENV = "development"
 FLASK_APP = "setor"
-port_api = 8080
+port_api = 8083
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('FLASK_ENV', silent=True)
@@ -51,13 +52,13 @@ def list_tcan():
         list_tcans_temp.append(list_tcans[x])
         status = False
     
-    value = {
+    response = {
         "status": status,
         "data": list_tcans_temp,
         "message": "Lixeiras resgatadas com sucesso" if status else "Erro ao resgatar lixeiras"
     }
 
-    return "a"
+    return json.dumps(response)
 
 # Função para esvaziar lixeira
 @app.route('/dump-tcan')
@@ -119,9 +120,21 @@ def update_priority():
 
 @app.route('/update-sector-list', methods=['POST'])
 def update_sector_list():
-    global sectorList
-    sectorList = requests.json()#TALVEZ PRECISE MUDAR CASO O JSON NÃO DE O LOADS JÁ
-    return None
+    status = None
+    try:
+        global sectorList
+        status = True
+        sectorList = request.get_json()
+    except:
+        status = False
+        # print(traceback.format_exc())
+    
+    response = {
+        "status": status,
+        "message": "Lista atualizada com sucesso" if status else "Erro ao atualizar lista"
+    }
+
+    return response
     
 def start_api():
     global port_api
@@ -208,15 +221,20 @@ def startConection():
     
     global topic_sector
     global sectorID
+    global port_mqtt
+    global port_api
 
     request = input('What is the number sector?')
     topic_sector = f'sector/sector{request}'
     sectorID = request
-
+    
+    port_mqtt = int(port_mqtt) + int(sectorID)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(broker, port_mqtt,60)
-    
+
+    on_execution()
+
     receive_thread = threading.Thread(target = start_api)
     receive_thread.start()
 
@@ -237,10 +255,17 @@ def on_execution():
     global sectorID
     global coordinator
     global sectorList
+    global port_api
     sectorPriority = random.randint(0,100)
-    sectorList = requests.get(f'http://127.0.0.1:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={port_api}')#TEM QUE MUDR A PORTA
-    sectorList = sectorList.json()#TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
-    coordinator = sectorList[0]['sectorID']
+    new_port_api = int(port_api) + int(sectorID)
+    sectorList_temp = None
+    sectorList_temp = requests.get(f'http://127.0.0.1:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={new_port_api}')
+    # Talvez não espere a requisição ser finalizada para executar o código abaixo, por isso coloquei o IF
+    if sectorList_temp:
+        #TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
+        sectorList = sectorList_temp
+        sectorList = sectorList.json()
+        coordinator = sectorList[0]['sectorID']
 
 def callElection():
     global sectorPriority

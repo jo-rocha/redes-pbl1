@@ -45,7 +45,9 @@ def addSector():
     for i in sectorList:
         if i['sectorID'] != newSector['sectorID']:
             port = i['api_port']
-            response = requests.post(f'http://127.0.0.1:{port}/update-sector-list', {dumpedSectorList})
+            # Quando quiser mandar um json pela rota é preciso adicionar esse headers e mandar o json dessa forma, igualando a data.
+            headers = {'content-type': 'application/json'}
+            response = requests.post(f'http://127.0.0.1:{port}/update-sector-list',data=json.dumps(dumpedSectorList), headers=headers)
     
     return dumpedSectorList
 

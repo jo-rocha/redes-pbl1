@@ -59,6 +59,9 @@ def on_message(client, userdata, msg):
         currentLoad = data_message['value']['currentLoad']
         lock = data_message['value']['lock']
     
+    elif data_message['header'] == 'reserve_tcan':
+        # Adiciona o id do caminhão que reservou a lixeira ou só adiciona 1 que significa que a lixeira está reservada?
+        reserved = 1
     print(msg.topic+" -  "+str(msg.payload))
 
 
