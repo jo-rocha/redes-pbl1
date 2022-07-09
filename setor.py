@@ -45,7 +45,7 @@ app.config.from_envvar('FLASK_APP', silent=True)
 def list_tcan():
     args = request.args
     number_tcans = int(args.get('number'))
-    sector = int(args.get('sector'))
+    sector = int(args.get('sector'))#VAI PRECISAR MESMO DESSA INFORMAÇÃO?
     status = False
     list_tcans_temp = []
     for x in range(number_tcans):
@@ -97,7 +97,7 @@ def reserve_tcan():
     global electionCounter
     global sectorList
     # reserveTcanList = request.json() precisa testar se isso só já da o loads ou se por set um get eu tenho que pegar o payload antes
-    reserveTcanList = requests.args.get('tcanRequest')
+    reserveTcanList = requests.args.get('reserve')
     if sectorID == coordinator and electionCounter < 2:
         electionCounter+= 1
         pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
