@@ -37,6 +37,7 @@ def addSector():
     truckIDCounter+=1
     truck['ID'] = truckIDCounter
     truck['sector'] = newSector['sectorID']
+    truck['port_api'] = newSector['port_api']
     truckList.append(truck)
     #o caminhao vai ter mais os campos de numero de lixeiras requisitadas, lixeiras reservadas e numero de lixeiras requisitadas
     ##criando novo caminhao end##
@@ -48,6 +49,10 @@ def addSector():
             response = requests.post(f'http://127.0.0.1:{port}/update-sector-list', {dumpedSectorList})
     
     return dumpedSectorList
+
+@app.route('/reserve-tcan')
+def reserveTcan():
+    pass
 
 ##################################### INTERFACE #####################################
 def runInterface():
@@ -63,7 +68,11 @@ def runInterface():
                 print("#################################################")
                 userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE REQUEST]\n")
                 if userInput == 's':
-                    pass#manda o request para setor
+                    for i in truckList:
+                        port = i['port_api']
+                        number = i['requestNumber']
+                        response = requests.get(f'http://127.0.0.1:{port}/list-tcans?number={number}')
+                        i['requestList'] = response.json()
                     break
                 else:
                     for i in truckList:
@@ -78,7 +87,13 @@ def runInterface():
                 print("#################################################")
                 userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE RESERVEATION REQUEST]\n")
                 if userInput == 's':
-                    pass#manda o request para o setor
+                    for i in truckList:
+                        port = i['port_api']
+                        toReserveList = i['toReserveList']
+                        dumpedToReserveList = json.dumps(toReserveList)
+                        #EU VOU TENTAR MANDAR UM JSON PELA URL DO GET, SE NÃO DER CERTO, PODE ESPERAR EM UM WHILE ATÉ QUE A LISTA RESERVADA NÃO ESTEJA VAZIA
+                        response = requests.get(f'http://127.0.0.1:{port}/list-tcans?reserve={dumpedToReserveList}')
+                        i['reservedList'] = json.loads(response)
                     break
                 else:
                     for i in truckList:
@@ -88,7 +103,7 @@ def runInterface():
                             for j in requestList:
                                 print(f"{j}\n")
                                 
-                            reserveList = []
+                            toReserveList = []
                             userInput = input("[SELECT WHICH TRASHCANS YOU WANT TO RESERVE. ENTER THE SECTOR ID FOLLOWED BY ',' THEN THE TRASHCAN ID\nTO SEPARATE ONE REQUEST FROM THE OTHER USE ';']\n")
                             counter = 0
                             dict = {}
@@ -101,7 +116,7 @@ def runInterface():
                                 elif k == ';':
                                     pass
                                 elif counter == 0:   
-                                    for l in reserveList:
+                                    for l in toReserveList:
                                         if l['sector'] == k:
                                             sectorAlreadyExists[0] = 1
                                             sectorAlreadyExists[1] = k
@@ -109,16 +124,25 @@ def runInterface():
                                         dict['sector'] = k
                                 elif counter == 2:
                                     if sectorAlreadyExists[0] == 1:
-                                        for m in reserveList:
+                                        for m in toReserveList:
                                             if m['sector'] == sectorAlreadyExists[1]:
                                                 appendList = m['tcan']
                                                 appendList.append(k)
+                                                m['tcan'] = appendList
                                     else:
                                         list = []
                                         list.append(k)
                                         dict['tcan'] = list
                                 counter += 1
-                            i['reserveList'] = reserveList
+                            i['toReserveList'] = toReserveList 
+            while True:
+                os.system('cls||clear')
+                print("#################################################")
+                for i in truckList:
+                    print(f"[TRUCK: {i['ID']}\n")
+                print("#################################################")
+                userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE REQUEST]\n")
+
 
 runInterface()
                         
