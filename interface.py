@@ -1,3 +1,4 @@
+from crypt import methods
 from select import select
 from wsgiref.validate import InputWrapper
 import paho.mqtt.client as mqtt
@@ -49,7 +50,8 @@ def addSector():
             port = i['api_port']
             # Quando quiser mandar um json pela rota é preciso adicionar esse headers e mandar o json dessa forma, igualando a data.
             headers = {'content-type': 'application/json'}
-            response = requests.post(f'http://127.0.0.1:{port}/update-sector-list',data=json.dumps(dumpedSectorList), headers=headers)
+            #nesse caso eu vou tirar o json.dumps() porque já faz o dump na linha 36 para enviar de volta para o request do setor novo na linha 56
+            response = requests.post(f'http://127.0.0.1:{port}/update-sector-list',data=dumpedSectorList, headers=headers)
     
     return dumpedSectorList
 
@@ -75,7 +77,7 @@ def runInterface():
                         port = i['port_api']
                         number = i['requestNumber']
                         response = requests.get(f'http://127.0.0.1:{port}/list-tcans?number={number}')
-                        i['requestList'] = response.json()
+                        i['requestList'] = json.loads(response)
                     break
                 else:
                     for i in truckList:
@@ -93,9 +95,8 @@ def runInterface():
                     for i in truckList:
                         port = i['port_api']
                         toReserveList = i['toReserveList']
-                        dumpedToReserveList = json.dumps(toReserveList)
-                        #EU VOU TENTAR MANDAR UM JSON PELA URL DO GET, SE NÃO DER CERTO, PODE ESPERAR EM UM WHILE ATÉ QUE A LISTA RESERVADA NÃO ESTEJA VAZIA
-                        response = requests.get(f'http://127.0.0.1:{port}/list-tcans?reserve={dumpedToReserveList}')
+                        headers = {'content-type': 'application/json'}
+                        response = requests.post(f'http://127.0.0.1:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
                         i['reservedList'] = json.loads(response)
                     break
                 else:
@@ -159,6 +160,7 @@ def runInterface():
                     for i in reservedList:
                         print(f'{i}\n')
                     selectedTcan = input('[SELECT A TRASHCAN ID TO EMPTY IT]\n')
+                    
                 else: break
 
 

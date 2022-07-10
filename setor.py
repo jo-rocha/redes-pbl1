@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from crypt import methods
 # from crypt import methods
 import json
 from operator import methodcaller, truediv
@@ -65,7 +66,7 @@ def list_tcan():
 def dump_tcan():
     args = request.args
     sector = int(args.get('sector'))
-    id_tcan = int(args.get('sector'))
+    id_tcan = int(args.get('id'))
     status = False
     #É possivel solicitar para descartar o lixo da lixeira a partir de outro setor sem ser o qual o caminhão pertence?
     if sectorID == sector:
@@ -92,24 +93,31 @@ def dump_tcan():
     return json.dumps(response)
 
 #Funcao para reservar as lixeiras
-@app.route('/reserve-tcan')
+@app.route('/reserve-tcan', methods=['POST'])
 def reserve_tcan():
     global electionCounter
     global sectorList
     # reserveTcanList = request.json() precisa testar se isso só já da o loads ou se por set um get eu tenho que pegar o payload antes
-    reserveTcanList = requests.args.get('reserve')
+    reserveTcanList = requests.get_json()
     if sectorID == coordinator and electionCounter < 2:
         electionCounter+= 1
         pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
     elif electionCounter >= 2:
         call_election()
+        #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
+        for i in sectorList:
+            if i['secID'] == coordinator:
+                coordPort = i['secPort']
+        headers = {'content-type': 'application/json'}
+        response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
     else:
         #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
         for i in sectorList:
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
-        response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tacn?tcanRequest={reserveTcanList}')
-        #falta ainda lidar com o response
+        headers = {'content-type': 'application/json'}
+        response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
+        #falta ainda lidar com o response para retornar uma resposta para a interface
 
 #Bloco responsavel por atualizar o número de prioridade deste setor quando o entao coordenador chamar uma nova eleicao
 @app.route('/election')
@@ -246,7 +254,7 @@ def startConection():
 if __name__ == '__main__':
     startConection()
 
-##################################### ELEICAO #####################################
+##################################### ELEICAO E PRIMEIRA EXECUCAO#####################################
 
 def on_execution():
     #quando o setor executa, ele vai enviar uma mensagem avisando a interface que ele está vivo, e vai sortear o seu numero de prioridade
@@ -263,8 +271,7 @@ def on_execution():
     # Talvez não espere a requisição ser finalizada para executar o código abaixo, por isso coloquei o IF
     if sectorList_temp:
         #TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
-        sectorList = sectorList_temp
-        sectorList = sectorList.json()
+        sectorList = json.loads(sectorList_temp)
         coordinator = sectorList[0]['sectorID']
 
 def call_election():
@@ -280,8 +287,8 @@ def call_election():
     #depois disso ele vai ordenar a nova lista de prioridade, atualizar o coordenador e enviar a nova lista para todos os outros setores
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     coordinator = sectorList[0]['sectorID']
-    dumpedSectorList = json.dumps(sectorList)
     for i in sectorList:
         port = i['port_api']
-        response = request.post(f'http://127.0.0.1:{port}/update-sector-list', dumpedSectorList)
+        headers = {'content-type': 'application/json'}
+        response = request.post(f'http://127.0.0.1:{port}/update-sector-list', data = json.dumps(sectorList), headers = headers)
         
