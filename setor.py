@@ -1,5 +1,5 @@
 from asyncio.windows_events import NULL
-from crypt import methods
+# from crypt import methods
 # from crypt import methods
 import json
 from operator import methodcaller, truediv
@@ -34,7 +34,7 @@ client = mqtt.Client()
 ##################################### API #####################################
 FLASK_ENV = "development"
 FLASK_APP = "setor"
-port_api = 8083
+port_api = 8080
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('FLASK_ENV', silent=True)
@@ -98,10 +98,22 @@ def reserve_tcan():
     global electionCounter
     global sectorList
     # reserveTcanList = request.json() precisa testar se isso só já da o loads ou se por set um get eu tenho que pegar o payload antes
-    reserveTcanList = requests.get_json()
+    reserveTcanList = request.get_json()
+
     if sectorID == coordinator and electionCounter < 2:
         electionCounter+= 1
-        pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
+        for item in reserveTcanList:
+            if item["setor"] == sectorID:
+                #Caso a lixeira esteja nesse setor, envia uma mensagem por mqtt para a lixeira alvo
+                value = {
+                    "setor_id": sectorID
+                }
+                send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(item["id"])}')
+            else:
+                # Caso a lixeira alvo esteja em outro setor, envia a mensagem para o setor correspondente.
+                # Mandar a mensagem de lixeira por lixeira, ou agrupar as lixeiras por setor, e enviar as requisições?
+                lixeira_id = item['id']
+                response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
     elif electionCounter >= 2:
         call_election()
         #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
@@ -118,6 +130,19 @@ def reserve_tcan():
         headers = {'content-type': 'application/json'}
         response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
+
+@app.route('/reserve-tcan-for-coordinator')
+def reserve_tcan_for_coordinator():
+    tcan_id = requests.args.get('tcan')
+    value = {
+        "setor_id": sectorID
+    }
+    send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(tcan_id)}')
+    response = {
+        "status": True,
+        "message": "Requisição enviada com sucesso"
+    }
+    return response
 
 #Bloco responsavel por atualizar o número de prioridade deste setor quando o entao coordenador chamar uma nova eleicao
 @app.route('/election')
@@ -236,12 +261,12 @@ def startConection():
     topic_sector = f'sector/sector{request}'
     sectorID = request
     
-    port_mqtt = int(port_mqtt) + int(sectorID)
+    # port_mqtt = int(port_mqtt) + int(sectorID)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(broker, port_mqtt,60)
 
-    on_execution()
+    # self.on_execution()
 
     receive_thread = threading.Thread(target = start_api)
     receive_thread.start()
