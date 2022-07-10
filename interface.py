@@ -63,6 +63,7 @@ def reserveTcan():
 def runInterface():
     while True:
         if not truckList:
+            os.system('cls||clear')
             print("[THERE ARE NO TRUCK REGISTERED IN THE SYSTEM YET]")
         else:
             while True:
@@ -138,8 +139,10 @@ def runInterface():
                                         list.append(k)
                                         dict['tcan'] = list
                                 counter += 1
-                            i['toReserveList'] = toReserveList 
+                            i['toReserveList'] = toReserveList
+            fail = False
             while True:
+                if fail == True: break
                 #checar se todas as lixeiras já foram esvaziadas
                 empty = True
                 for i in truckList:
@@ -153,13 +156,34 @@ def runInterface():
                     for i in truckList:
                         print(f"[TRUCK: {i['ID']}\n")
                     print("#################################################")
-                    selectedTruck = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS]\n")
-                    reservedList = selectedTruck['reservedlist']
+                    selectedTruck = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS]\n")                    
+                    reservedList = None
+                    port = None
+                    for truck in truckList:
+                        if truck['ID'] == selectedTruck:
+                            reservedList = truck['reservedList']
+                            port = truck['api_port']
+                            break
                     os.system('cls||clear')
                     print('[THESE ARE THE TRASHCANS RESERVED FOR THE TRUCK]\n')
-                    for i in reservedList:
-                        print(f'{i}\n')
-                    selectedTcan = input('[SELECT A TRASHCAN ID TO EMPTY IT]\n')
+                    for k in reservedList:
+                        print(f'{k}\n')
+                    response = input('[SELECT THE SECTOR AND THE TRASHCAN YOU WANT TO EMPTY SEPARATING THEM BY ","]\n')
+                    response = response.split(',')                
+                    emptyTcan = requests.get(f'http://127.0.0.1:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
+                    emptyTcan = json.loads(emptyTcan)
+                    if emptyTcan['message'] == 'Lixeira esvaziada com sucesso':
+                        reservedList = truck['reservedList']
+                        for l in reservedList:
+                            if l['sector'] == response[0] and l['ID'] == response[1]:
+                                l['currentLoad'] = 0
+                                os.system('cls||clear')
+                                print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
+                                break
+                    else:
+                        os.system('cls||clear')
+                        print('[A FAILURE HAS OCCURRED!]')
+                        fail = True
                     
                 else: break
 
