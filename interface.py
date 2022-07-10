@@ -1,3 +1,4 @@
+from select import select
 from wsgiref.validate import InputWrapper
 import paho.mqtt.client as mqtt
 import json
@@ -138,12 +139,27 @@ def runInterface():
                                 counter += 1
                             i['toReserveList'] = toReserveList 
             while True:
-                os.system('cls||clear')
-                print("#################################################")
+                #checar se todas as lixeiras já foram esvaziadas
+                empty = True
                 for i in truckList:
-                    print(f"[TRUCK: {i['ID']}\n")
-                print("#################################################")
-                userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE REQUEST]\n")
+                    if empty == False: break
+                    reservedList = i['reservedList']
+                    for j in reservedList:
+                        if j['currentLoad'] != 0: empty = False; break
+                if empty == False:
+                    os.system('cls||clear')
+                    print("#################################################")
+                    for i in truckList:
+                        print(f"[TRUCK: {i['ID']}\n")
+                    print("#################################################")
+                    selectedTruck = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS]\n")
+                    reservedList = selectedTruck['reservedlist']
+                    os.system('cls||clear')
+                    print('[THESE ARE THE TRASHCANS RESERVED FOR THE TRUCK]\n')
+                    for i in reservedList:
+                        print(f'{i}\n')
+                    selectedTcan = input('[SELECT A TRASHCAN ID TO EMPTY IT]\n')
+                else: break
 
 
 runInterface()

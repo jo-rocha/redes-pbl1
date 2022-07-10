@@ -102,7 +102,7 @@ def reserve_tcan():
         electionCounter+= 1
         pass#vai procurar a se tem alguma lixeira que está nesse setor, e se não enviar os requests para os outros setores
     elif electionCounter >= 2:
-        callElection()
+        call_election()
     else:
         #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
         for i in sectorList:
@@ -267,7 +267,7 @@ def on_execution():
         sectorList = sectorList.json()
         coordinator = sectorList[0]['sectorID']
 
-def callElection():
+def call_election():
     global sectorPriority
     global coordinator
     global sectorList
