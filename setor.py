@@ -131,6 +131,7 @@ def reserve_tcan():
         response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
 
+# Rota que o coordenador chama para reservar a lixeira sem ter que fazer as validações de qual setor é o coordenador
 @app.route('/reserve-tcan-for-coordinator')
 def reserve_tcan_for_coordinator():
     tcan_id = requests.args.get('tcan')
