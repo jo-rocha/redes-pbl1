@@ -28,9 +28,9 @@ def addSector():
     global truckIDCounter
     global truckList
     newSector = {}
-    newSector['sectorID'] = requests.args.get('sectorID')
-    newSector['sectorPriority'] = requests.args.get('sectorPriority')
-    newSector['port_api'] = requests.args.get('port_api')
+    newSector['sectorID'] = request.args.get('sectorID')
+    newSector['sectorPriority'] = request.args.get('sectorPriority')
+    newSector['port_api'] = request.args.get('port_api')
     sectorList.append(newSector)
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     dumpedSectorList = json.dumps(sectorList)
