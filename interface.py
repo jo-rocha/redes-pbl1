@@ -1,4 +1,4 @@
-from crypt import methods
+#from crypt import methods
 from select import select
 from wsgiref.validate import InputWrapper
 import paho.mqtt.client as mqtt
