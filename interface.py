@@ -22,6 +22,7 @@ app.config.from_object(__name__)
 app.config.from_envvar('FLASK_ENV', silent=True)
 app.config.from_envvar('FLASK_APP', silent=True)
 
+
 @app.route('/inform-get-sectors')
 def addSector():
     global sectorList
@@ -105,9 +106,14 @@ def runInterface():
                     for i in truckList:
                         port = i['port_api']
                         toReserveList = i['toReserveList']
-                        headers = {'content-type': 'application/json'}
-                        response = requests.post(f'http://26.241.233.14:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
-                        i['reservedList'] = response.json()['data']
+                        if toReserveList:
+                            headers = {'content-type': 'application/json'}
+                            print(toReserveList)
+                            response = requests.post(f'http://26.241.233.14:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
+                            print(response)
+                            i['reservedList'] = response.json()['data']                            
+                        else:
+                            i['reservedList'] = []
                     break
                 else:
                     for i in truckList:
@@ -121,34 +127,71 @@ def runInterface():
                             userInput = input("[SELECT WHICH TRASHCANS YOU WANT TO RESERVE. ENTER THE SECTOR ID FOLLOWED BY ',' THEN THE TRASHCAN ID\nTO SEPARATE ONE REQUEST FROM THE OTHER USE ';']\n")
                             counter = 0
                             dict = {}
-                            sectorAlreadyExists = [0, 0]
-                            for k in userInput:
-                                sectorAlreadyExists[0] = 0
-                                if counter == 4: counter = 0                        
-                                if k == ',':
-                                    pass
-                                elif k == ';':
-                                    pass
-                                elif counter == 0:   
-                                    for l in toReserveList:
-                                        if l['sector'] == k:
-                                            sectorAlreadyExists[0] = 1
-                                            sectorAlreadyExists[1] = k
-                                    if sectorAlreadyExists[0] == 0:
-                                        dict['sector'] = k
-                                elif counter == 2:
-                                    if sectorAlreadyExists[0] == 1:
-                                        for m in toReserveList:
-                                            if m['sector'] == sectorAlreadyExists[1]:
-                                                appendList = m['tcan']
-                                                appendList.append(k)
-                                                m['tcan'] = appendList
-                                    else:
-                                        list = []
-                                        list.append(k)
-                                        dict['tcan'] = list
-                                counter += 1
-                            i['toReserveList'] = toReserveList
+                            sectorAlreadyExists = False
+                            if '0' not in userInput:
+                                if ';' in userInput:
+                                    userInput = userInput.split(';')                                
+                                    for i in userInput:
+                                        dict = {}
+                                        if toReserveList:
+                                            i = i.split(',')
+                                            for j in toReserveList:
+                                                if j['sector'] == i[0]:
+                                                    appendList = j['tcan']
+                                                    print(appendList)
+                                                    appendList.append(i[1])
+                                                    j['tcan'] == appendList
+                                                    sectorAlreadyExists = True
+                                            if sectorAlreadyExists == False:
+                                                dict['sector'] = i[0]
+                                                appendList = []
+                                                appendList.append(i[1])
+                                                dict['tcan'] = appendList
+                                                toReserveList.append(dict)
+                                        else:
+                                            i = i.split(',')
+                                            dict['sector'] = i[0]
+                                            appendList = []
+                                            appendList.append(i[1])
+                                            dict['tcan'] = appendList
+                                            toReserveList.append(dict)
+                                else:
+                                    userInput = userInput.split(',')
+                                    dict['sector'] = userInput[0]
+                                    appendList = []
+                                    appendList.append(userInput[1])
+                                    dict['tcan'] = appendList
+                                    toReserveList.append(dict)
+                                i['toReserveList'] = toReserveList
+                            else:
+                                i['toReserveList'] = [] 
+                            # for k in userInput:
+                            #     sectorAlreadyExists[0] = 0
+                            #     if counter == 4: counter = 0                        
+                            #     if k == ',':
+                            #         pass
+                            #     elif k == ';':
+                            #         pass
+                            #     elif counter == 0:   
+                            #         for l in toReserveList:
+                            #             if l['sector'] == k:
+                            #                 sectorAlreadyExists[0] = 1
+                            #                 sectorAlreadyExists[1] = k
+                            #         if sectorAlreadyExists[0] == 0:
+                            #             dict['sector'] = k
+                            #     elif counter == 2:
+                            #         if sectorAlreadyExists[0] == 1:
+                            #             for m in toReserveList:
+                            #                 if m['sector'] == sectorAlreadyExists[1]:
+                            #                     appendList = m['tcan']
+                            #                     appendList.append(k)
+                            #                     m['tcan'] = appendList
+                            #         else:
+                            #             list = []
+                            #             list.append(k)
+                            #             dict['tcan'] = list
+                            #     counter += 1
+                            # i['toReserveList'] = toReserveList
                             break
             fail = False
             while True:
@@ -183,24 +226,25 @@ def runInterface():
                     for k in reservedList:
                         print(f'{k}\n')
                     response = input('[SELECT THE SECTOR AND THE TRASHCAN YOU WANT TO EMPTY SEPARATING THEM BY ","]\n')
-                    response = response.split(',')                
-                    emptyTcan = requests.get(f'http://26.241.233.14:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
-                    emptyTcan = emptyTcan.json()
-                    if bool(emptyTcan['status']):
-                        reservedList = truck['reservedList']
-                        for l in reservedList:
-                            if int(l['setor']) == int(response[0]) and int(l['id']) == int(response[1]):
-                                l['currentLoad'] = 0
-                                os.system('cls||clear')
-                                print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
-                                time.sleep(4)
-                                break
-                            print('nao achei lixeira')
-                    else:
-                        os.system('cls||clear')
-                        print('[A FAILURE HAS OCCURRED!]')
-                        time.sleep(4)
-                        fail = True
+                    if '0' not in response:
+                        response = response.split(',')             
+                        emptyTcan = requests.get(f'http://26.241.233.14:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
+                        emptyTcan = emptyTcan.json()
+                        if bool(emptyTcan['status']):
+                            reservedList = truck['reservedList']
+                            for l in reservedList:
+                                if int(l['setor']) == int(response[0]) and int(l['id']) == int(response[1]):
+                                    l['currentLoad'] = 0
+                                    os.system('cls||clear')
+                                    print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
+                                    time.sleep(4)
+                                    break
+                                print('nao achei lixeira')
+                        else:
+                            os.system('cls||clear')
+                            print('[A FAILURE HAS OCCURRED!]')
+                            time.sleep(4)
+                            fail = True,0
                     
                 else: break
 
