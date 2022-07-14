@@ -3,7 +3,7 @@ import threading
 import constant
 from operator import itemgetter
 
-# host = '26.241.233.114'
+# host = '127.0.0.1'
 # port = 55556
 # Creating socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

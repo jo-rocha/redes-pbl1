@@ -277,7 +277,7 @@ def _socketpair_compat():
     listensock = socket.socket(
         socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP)
     listensock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    listensock.bind(("26.241.233.114", 0))
+    listensock.bind(("127.0.0.1", 0))
     listensock.listen(1)
 
     iface, port = listensock.getsockname()
@@ -285,7 +285,7 @@ def _socketpair_compat():
         socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_IP)
     sock1.setblocking(0)
     try:
-        sock1.connect(("26.241.233.114", port))
+        sock1.connect(("127.0.0.1", port))
     except BlockingIOError:
         pass
     sock2, address = listensock.accept()
