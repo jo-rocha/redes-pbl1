@@ -119,7 +119,7 @@ def reserve_tcan():
                 # Caso a lixeira alvo esteja em outro setor, envia a mensagem para o setor correspondente.
                 # Mandar a mensagem de lixeira por lixeira, ou agrupar as lixeiras por setor, e enviar as requisições?
                 lixeira_id = item['id']
-                response = requests.get(f'http://26.241.233.114:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
+                response = requests.get(f'http://127.0.0.14:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
     elif electionCounter >= 2:
         call_election()
         #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
@@ -127,14 +127,14 @@ def reserve_tcan():
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         headers = {'content-type': 'application/json'}
-        response = requests.post(f'http://26.241.233.114:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
+        response = requests.post(f'http://26.241.233.14:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
     else:
         #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
         for i in sectorList:
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         headers = {'content-type': 'application/json'}
-        response = requests.post(f'http://26.241.233.114:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
+        response = requests.post(f'http://26.241.233.14:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
 
 # Rota que o coordenador chama para reservar a lixeira sem ter que fazer as validações de qual setor é o coordenador
@@ -178,7 +178,7 @@ def update_sector_list():
     
 def start_api():
     global port_api
-    app.run(port=port_api, host='26.241.233.114')
+    app.run(port=port_api, host='26.241.233.14')
 
 ##################################### BLOCO MQTT #####################################
 
@@ -273,18 +273,15 @@ def startConection():
     client.on_message = on_message
     client.connect(broker, port_mqtt,60)
 
-    # self.on_execution()
-
+    port_api = int(port_api) + int(sectorID)
+    on_execution()
     receive_thread = threading.Thread(target = start_api)
     receive_thread.start()
 
     while True:
         # client.subscribe('connection/teste')
         client.loop_start()
-
-
-if __name__ == '__main__':
-    startConection()
+        pass
 
 ##################################### ELEICAO E PRIMEIRA EXECUCAO#####################################
 
@@ -297,14 +294,14 @@ def on_execution():
     global sectorList
     global port_api
     sectorPriority = random.randint(0,100)
-    new_port_api = int(port_api) + int(sectorID)
     sectorList_temp = None
-    sectorList_temp = requests.get(f'http://26.241.233.114:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={new_port_api}')
+    sectorList_temp = requests.get(f'http://26.241.233.114:8088/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={port_api}')
     # Talvez não espere a requisição ser finalizada para executar o código abaixo, por isso coloquei o IF
     if sectorList_temp:
         #TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
-        sectorList = json.loads(sectorList_temp)
+        sectorList = sectorList_temp.json()
         coordinator = sectorList[0]['sectorID']
+        print(coordinator)
 
 def call_election():
     global sectorPriority
@@ -315,12 +312,16 @@ def call_election():
     for i in sectorList:
         port = i['port_api']
         #o setor que receber a mensagem vai resortear seu valor de prioridade e retornar no request
-        i['sectorPriority'] = requests.get(f'http://26.241.233.114:{port}/election')
+        i['sectorPriority'] = requests.get(f'http://26.241.233.14:{port}/election')
     #depois disso ele vai ordenar a nova lista de prioridade, atualizar o coordenador e enviar a nova lista para todos os outros setores
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     coordinator = sectorList[0]['sectorID']
     for i in sectorList:
         port = i['port_api']
         headers = {'content-type': 'application/json'}
-        response = request.post(f'http://26.241.233.114:{port}/update-sector-list', data = json.dumps(sectorList), headers = headers)
+        response = request.post(f'http://26.241.233.14:{port}/update-sector-list', data = json.dumps(sectorList), headers = headers)
+
+
+if __name__ == '__main__':
+    startConection()
         

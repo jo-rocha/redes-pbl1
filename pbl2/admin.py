@@ -19,7 +19,7 @@ def execute_interface():
         numberOfTcans = input("[INPUT THE NUMBER OF TRASHCANS YOU WANT TO TRACK:]\n")
         #manda o request para pegar a lista de lixeiras críticas
         payload = {'number': f'{numberOfTcans}'}
-        response = requests.get(f"http://26.241.233.114:5000/list-tcans?number={numberOfTcans}")
+        response = requests.get(f"http://127.0.0.1:5000/list-tcans?number={numberOfTcans}")
         aux = response.content.decode()
         aux = aux.split('|')
         tcanList = []
