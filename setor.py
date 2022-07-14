@@ -109,44 +109,56 @@ def reserve_tcan():
     if sectorID == coordinator and electionCounter < 2:
         electionCounter+= 1
         for item in reserveTcanList:
-            if item["setor"] == sectorID:
+            if item["sector"] == sectorID:
                 #Caso a lixeira esteja nesse setor, envia uma mensagem por mqtt para a lixeira alvo
-                if not tcanIsreserved(item["id"]):
-                    value = {
-                        "setor_id": sectorID
-                    }
-                    send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(item["id"])}')
-                    for item in list_tcans:
-                        if int(item['id']) == int(item["id"]):
-                            reserved_tcans.append({})
+                for tcan in item["tcan"]:
+                    if not tcanIsreserved(tcan):
+                        value = {
+                            "setor_id": sectorID
+                        }
+                        send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(tcan)}')
+                        for item in list_tcans:
+                            if int(item['id']) == int(tcan):
+                                reserved_tcans.append(item)
             else:
                 # Caso a lixeira alvo esteja em outro setor, envia a mensagem para o setor correspondente.
                 # Mandar a mensagem de lixeira por lixeira, ou agrupar as lixeiras por setor, e enviar as requisições?
-                lixeira_id = item['id']
-                response = requests.get(f'http://127.0.0.14:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
-                response = response.json()
-                if bool(response['status']):
-                    reserved_tcans.append(response['data'])
+                coordPort = i['port_api']
+                for tcan in item["tcan"]:
+                    lixeira_id = tcan
+                    response = requests.get(f'http://127.0.0.14:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
+                    response = response.json()
+                    if bool(response['status']):
+                        reserved_tcans.append(response['data'])
     elif electionCounter >= 2:
         call_election()
         #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
         for i in sectorList:
-            if i['secID'] == coordinator:
-                coordPort = i['secPort']
+            if i['sectorID'] == coordinator:
+                coordPort = i['port_api']
         headers = {'content-type': 'application/json'}
         response = requests.post(f'http://26.241.233.14:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
     else:
         #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
         for i in sectorList:
-            if i['secID'] == coordinator:
-                coordPort = i['secPort']
+            if i['sectorID'] == coordinator:
+                coordPort = i['port_api']
         headers = {'content-type': 'application/json'}
         response = requests.post(f'http://26.241.233.14:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
     
+    status = True
     if len(reserved_tcans) != len(reserveTcanList):
         reserved_tcans = []
-    return json.dumps(reserved_tcans)
+        status = False
+    
+    response = {
+        "status": status,
+        "data": reserved_tcans,
+        "message": "Lixeiras resgatadas com sucesso" if status else "Erro ao resgatar lixeiras"
+    }
+
+    return json.dumps(response)
 
 # Rota que o coordenador chama para reservar a lixeira sem ter que fazer as validações de qual setor é o coordenador
 @app.route('/reserve-tcan-for-coordinator')
@@ -176,7 +188,7 @@ def reserve_tcan_for_coordinator():
 def update_priority():
     global sectorPriority
     sectorPriority = random.randint(0,100)
-    return sectorPriority
+    return str(sectorPriority)
 
 @app.route('/update-sector-list', methods=['POST'])
 def update_sector_list():
