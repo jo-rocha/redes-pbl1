@@ -180,11 +180,13 @@ def update_priority():
 
 @app.route('/update-sector-list', methods=['POST'])
 def update_sector_list():
+    global coordinator
     status = None
     try:
         global sectorList
         status = True
         sectorList = request.get_json()
+        coordinator = sectorList[0]['sectorID']
     except:
         status = False
         # print(traceback.format_exc())

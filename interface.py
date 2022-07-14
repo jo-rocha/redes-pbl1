@@ -22,6 +22,7 @@ app.config.from_object(__name__)
 app.config.from_envvar('FLASK_ENV', silent=True)
 app.config.from_envvar('FLASK_APP', silent=True)
 
+
 @app.route('/inform-get-sectors')
 def addSector():
     global sectorList
@@ -105,12 +106,14 @@ def runInterface():
                     for i in truckList:
                         port = i['port_api']
                         toReserveList = i['toReserveList']
-                        print(toReserveList)
-                        time.sleep(3)
                         if toReserveList:
                             headers = {'content-type': 'application/json'}
+                            print(toReserveList)
                             response = requests.post(f'http://26.241.233.14:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
-                            i['reservedList'] = response.json()['data']
+                            print(response)
+                            i['reservedList'] = response.json()['data']                            
+                        else:
+                            i['reservedList'] = []
                     break
                 else:
                     for i in truckList:
@@ -160,7 +163,8 @@ def runInterface():
                                     dict['tcan'] = appendList
                                     toReserveList.append(dict)
                                 i['toReserveList'] = toReserveList
-                                
+                            else:
+                                i['toReserveList'] = [] 
                             # for k in userInput:
                             #     sectorAlreadyExists[0] = 0
                             #     if counter == 4: counter = 0                        
@@ -222,24 +226,25 @@ def runInterface():
                     for k in reservedList:
                         print(f'{k}\n')
                     response = input('[SELECT THE SECTOR AND THE TRASHCAN YOU WANT TO EMPTY SEPARATING THEM BY ","]\n')
-                    response = response.split(',')                
-                    emptyTcan = requests.get(f'http://26.241.233.14:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
-                    emptyTcan = emptyTcan.json()
-                    if bool(emptyTcan['status']):
-                        reservedList = truck['reservedList']
-                        for l in reservedList:
-                            if int(l['setor']) == int(response[0]) and int(l['id']) == int(response[1]):
-                                l['currentLoad'] = 0
-                                os.system('cls||clear')
-                                print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
-                                time.sleep(4)
-                                break
-                            print('nao achei lixeira')
-                    else:
-                        os.system('cls||clear')
-                        print('[A FAILURE HAS OCCURRED!]')
-                        time.sleep(4)
-                        fail = True
+                    if '0' not in response:
+                        response = response.split(',')             
+                        emptyTcan = requests.get(f'http://26.241.233.14:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
+                        emptyTcan = emptyTcan.json()
+                        if bool(emptyTcan['status']):
+                            reservedList = truck['reservedList']
+                            for l in reservedList:
+                                if int(l['setor']) == int(response[0]) and int(l['id']) == int(response[1]):
+                                    l['currentLoad'] = 0
+                                    os.system('cls||clear')
+                                    print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
+                                    time.sleep(4)
+                                    break
+                                print('nao achei lixeira')
+                        else:
+                            os.system('cls||clear')
+                            print('[A FAILURE HAS OCCURRED!]')
+                            time.sleep(4)
+                            fail = True,0
                     
                 else: break
 
