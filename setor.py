@@ -52,12 +52,12 @@ def reserveTcan2():
 def list_tcan():
     args = request.args
     number_tcans = int(args.get('number'))
-    sector = int(args.get('sector'))#VAI PRECISAR MESMO DESSA INFORMAÇÃO?
+    # sector = int(args.get('sector'))#VAI PRECISAR MESMO DESSA INFORMAÇÃO?
     status = False
     list_tcans_temp = []
     for x in range(number_tcans):
         list_tcans_temp.append(list_tcans[x])
-        status = False
+        status = True
     
     response = {
         "status": status,
@@ -105,21 +105,28 @@ def reserve_tcan():
     global sectorList
     # reserveTcanList = request.json() precisa testar se isso só já da o loads ou se por set um get eu tenho que pegar o payload antes
     reserveTcanList = request.get_json()
-
+    reserved_tcans = []
     if sectorID == coordinator and electionCounter < 2:
         electionCounter+= 1
         for item in reserveTcanList:
             if item["setor"] == sectorID:
                 #Caso a lixeira esteja nesse setor, envia uma mensagem por mqtt para a lixeira alvo
-                value = {
-                    "setor_id": sectorID
-                }
-                send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(item["id"])}')
+                if not tcanIsreserved(item["id"]):
+                    value = {
+                        "setor_id": sectorID
+                    }
+                    send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(item["id"])}')
+                    for item in list_tcans:
+                        if int(item['id']) == int(item["id"]):
+                            reserved_tcans.append({})
             else:
                 # Caso a lixeira alvo esteja em outro setor, envia a mensagem para o setor correspondente.
                 # Mandar a mensagem de lixeira por lixeira, ou agrupar as lixeiras por setor, e enviar as requisições?
                 lixeira_id = item['id']
                 response = requests.get(f'http://127.0.0.14:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
+                response = response.json()
+                if bool(response['status']):
+                    reserved_tcans.append(response['data'])
     elif electionCounter >= 2:
         call_election()
         #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
@@ -136,18 +143,31 @@ def reserve_tcan():
         headers = {'content-type': 'application/json'}
         response = requests.post(f'http://26.241.233.14:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
+    
+    if len(reserved_tcans) != len(reserveTcanList):
+        reserved_tcans = []
+    return json.dumps(reserved_tcans)
 
 # Rota que o coordenador chama para reservar a lixeira sem ter que fazer as validações de qual setor é o coordenador
 @app.route('/reserve-tcan-for-coordinator')
 def reserve_tcan_for_coordinator():
     tcan_id = requests.args.get('tcan')
-    value = {
-        "setor_id": sectorID
-    }
-    send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(tcan_id)}')
+    status = False
+    tcan_temp = {}
+    if not tcanIsreserved(tcan_id):
+        value = {
+            "setor_id": sectorID
+        }
+        status = True
+        send_message('reserve_tcan',value,f'sector/sector{sectorID}/lixeira{str(tcan_id)}')
+        for item in list_tcans:
+            if int(item['id']) == item(tcan_id):
+                tcan_temp = item
+
     response = {
-        "status": True,
-        "message": "Requisição enviada com sucesso"
+        "status": status,
+        "data":tcan_temp,
+        "message": "Requisição enviada com sucesso" if status else "Falha no envio da requisição"
     }
     return response
 
@@ -179,6 +199,12 @@ def update_sector_list():
 def start_api():
     global port_api
     app.run(port=port_api, host='26.241.233.14')
+
+def tcanIsreserved(tcan_id):
+    for item in list_tcans:
+        if item['id'] == tcan_id and int(item['reserved']) == int(1):
+            return True
+    return False
 
 ##################################### BLOCO MQTT #####################################
 
@@ -219,11 +245,12 @@ def on_message(client, userdata, msg):
                     "setor": data_message['value']['setor'],
                     "id": str(id_tcan),
                     "value": data_message['value']['currentLoad'],
-                    "lock": data_message['value']['lock']
+                    "lock": data_message['value']['lock'],
+                    "reserved": data_message['value']['reserved']
                 }
-                arquivo = open(f'setor{sectorID}.txt', 'a')
-                arquivo.write(json.dumps(value) + '\n')
-                arquivo.close
+                # arquivo = open(f'setor{sectorID}.txt', 'a')
+                # arquivo.write(json.dumps(value) + '\n')
+                # arquivo.close
                 send_message('return_id_tcan',value,f'sector/sector{sectorID}/lixeira{str(id_tcan)}')
                 send_message('cadastro', value, f'truck')
 
@@ -232,6 +259,7 @@ def on_message(client, userdata, msg):
                 if tcan['id'] == data_message['value']['id']:
                     tcan['currentLoad'] = data_message['value']['currentLoad']
                     tcan['lock'] = data_message['value']['lock']
+                    tcan['reserved'] = data_message['value']['reserved']
 
     print(msg.topic+" -  "+str(msg.payload))
 

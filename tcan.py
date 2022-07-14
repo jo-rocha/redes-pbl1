@@ -46,7 +46,7 @@ def on_message(client, userdata, msg):
     global lock
     global id
     global sector_id
-
+    global reserved
     data_message = json.loads(msg.payload.decode())
     if data_message['header'] == 'return_id_tcan':
         if id == None:
@@ -63,6 +63,15 @@ def on_message(client, userdata, msg):
         # Adiciona o id do caminhão que reservou a lixeira ou só adiciona 1 que significa que a lixeira está reservada?
         # reserved = data_message['value']['setor_id']
         reserved = 1
+        value = {
+            "id": id,
+            "setor":sector_id,
+            "currentLoad":str(currentLoad),
+            "lock":lock,
+            "reserved":reserved
+        }
+
+        send_message("update_data",value,f"sector/sector{sector_id}")
     print(msg.topic+" -  "+str(msg.payload))
 
 
@@ -99,6 +108,7 @@ def startConection():
     global currentLoad
     global lock
     global sector_id
+    global reserved
     request = input('What is the trash sector?')
     topic_sector = f'sector/sector{request}'
     sector_id = request
@@ -110,7 +120,8 @@ def startConection():
     value = {
         "setor":str(request),
         "currentLoad":str(currentLoad),
-        "lock":lock
+        "lock":lock,
+        "reserved":reserved
     }
     client.subscribe(topic_sector)
     send_message("connection",value,"connection/teste")
