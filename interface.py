@@ -28,9 +28,10 @@ def addSector():
     global truckIDCounter
     global truckList
     newSector = {}
-    newSector['sectorID'] = request.args.get('sectorID')
-    newSector['sectorPriority'] = request.args.get('sectorPriority')
-    newSector['port_api'] = request.args.get('port_api')
+    newSector['sectorID'] = request.args.get('secId')
+    newSector['sectorPriority'] = request.args.get('secPri')
+    newSector['port_api'] = request.args.get('secPort')
+    print(newSector)
     sectorList.append(newSector)
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     dumpedSectorList = json.dumps(sectorList)
@@ -40,6 +41,7 @@ def addSector():
     truck['ID'] = truckIDCounter
     truck['sector'] = newSector['sectorID']
     truck['port_api'] = newSector['port_api']
+    print(truck)
     truckList.append(truck)
     #o caminhao vai ter mais os campos de numero de lixeiras requisitadas, lixeiras reservadas e numero de lixeiras requisitadas
     ##criando novo caminhao end##
@@ -47,24 +49,31 @@ def addSector():
     #ordena a lista e manda para todos os servidores atualizarem
     for i in sectorList:
         if i['sectorID'] != newSector['sectorID']:
-            port = i['api_port']
+            port = i['port_api']
             # Quando quiser mandar um json pela rota é preciso adicionar esse headers e mandar o json dessa forma, igualando a data.
             headers = {'content-type': 'application/json'}
             #nesse caso eu vou tirar o json.dumps() porque já faz o dump na linha 36 para enviar de volta para o request do setor novo na linha 56
-            response = requests.post(f'http://26.241.233.114:{port}/update-sector-list',data=dumpedSectorList, headers=headers)
+            response = requests.post(f'http://26.241.233.14:{port}/update-sector-list',data=dumpedSectorList, headers=headers)
     
     return dumpedSectorList
 
-@app.route('/reserve-tcan')
-def reserveTcan():
-    pass
+def start_api():
+    global port_api
+    app.run(port=port_api, host='26.241.233.114')
+
+# @app.route('/reserve-tcan')
+# # def reserveTcan():
+# #     pass
 
 ##################################### INTERFACE #####################################
 def runInterface():
+    receive_thread = threading.Thread(target = start_api)
+    receive_thread.start()
     while True:
         if not truckList:
-            os.system('cls||clear')
+            os.system('cls||clear')            
             print("[THERE ARE NO TRUCK REGISTERED IN THE SYSTEM YET]")
+            time.sleep(2)
         else:
             while True:
                 os.system('cls||clear')
@@ -77,19 +86,19 @@ def runInterface():
                     for i in truckList:
                         port = i['port_api']
                         number = i['requestNumber']
-                        response = requests.get(f'http://26.241.233.114:{port}/list-tcans?number={number}')
-                        i['requestList'] = json.loads(response)
+                        response = requests.get(f'http://26.241.233.14:{port}/list-tcans?number={number}')
+                        i['requestList'] = response.json()['data']
                     break
                 else:
                     for i in truckList:
-                        if i['ID'] == userInput:
+                        if int(i['ID']) == int(userInput):
                             requestNumber = input("[HOW MANY TRASHCANS DO YOU WANT TO REQUEST?]\n")
                             i['requestNumber'] = requestNumber
             while True:
                 os.system('cls||clear')
                 print("#################################################")
                 for i in truckList:
-                    print(f"{i}\n")
+                    print(f"[TRUCK: {i['ID']}\n")
                 print("#################################################")
                 userInput = input("[SELECT A TRUCK ID TO GIVE FURTHER INSTRUCTIONS OR PRESS 'S' TO SEND THE RESERVEATION REQUEST]\n")
                 if userInput == 's':
@@ -97,12 +106,12 @@ def runInterface():
                         port = i['port_api']
                         toReserveList = i['toReserveList']
                         headers = {'content-type': 'application/json'}
-                        response = requests.post(f'http://26.241.233.114:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
-                        i['reservedList'] = json.loads(response)
+                        response = requests.post(f'http://26.241.233.14:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
+                        i['reservedList'] = response.json()['data']
                     break
                 else:
                     for i in truckList:
-                        if i['ID'] == userInput:
+                        if int(i['ID']) == int(userInput):
                             requestList = i['requestList']
                             print("[THESE ARE THE TRASHCANS REQUESTED BY THE TRUCK]\n")
                             for j in requestList:
@@ -140,6 +149,7 @@ def runInterface():
                                         dict['tcan'] = list
                                 counter += 1
                             i['toReserveList'] = toReserveList
+                            break
             fail = False
             while True:
                 if fail == True: break
@@ -149,7 +159,11 @@ def runInterface():
                     if empty == False: break
                     reservedList = i['reservedList']
                     for j in reservedList:
-                        if j['currentLoad'] != 0: empty = False; break
+                        print(f'{type(j)}\n')
+                        print(f'{j}\n')
+                        if int(j['currentLoad']) != 0: 
+                            empty = False
+                            break
                 if empty == False:
                     os.system('cls||clear')
                     print("#################################################")
@@ -160,9 +174,9 @@ def runInterface():
                     reservedList = None
                     port = None
                     for truck in truckList:
-                        if truck['ID'] == selectedTruck:
+                        if int(truck['ID']) == int(selectedTruck):
                             reservedList = truck['reservedList']
-                            port = truck['api_port']
+                            port = truck['port_api']
                             break
                     os.system('cls||clear')
                     print('[THESE ARE THE TRASHCANS RESERVED FOR THE TRUCK]\n')
@@ -170,19 +184,22 @@ def runInterface():
                         print(f'{k}\n')
                     response = input('[SELECT THE SECTOR AND THE TRASHCAN YOU WANT TO EMPTY SEPARATING THEM BY ","]\n')
                     response = response.split(',')                
-                    emptyTcan = requests.get(f'http://26.241.233.114:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
-                    emptyTcan = json.loads(emptyTcan)
-                    if emptyTcan['message'] == 'Lixeira esvaziada com sucesso':
+                    emptyTcan = requests.get(f'http://26.241.233.14:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
+                    emptyTcan = emptyTcan.json()
+                    if bool(emptyTcan['status']):
                         reservedList = truck['reservedList']
                         for l in reservedList:
-                            if l['sector'] == response[0] and l['ID'] == response[1]:
+                            if int(l['setor']) == int(response[0]) and int(l['id']) == int(response[1]):
                                 l['currentLoad'] = 0
                                 os.system('cls||clear')
                                 print('[THE TRASHCAN HAS BEEN SUCCESSFULLY EMPTIED]')
+                                time.sleep(4)
                                 break
+                            print('nao achei lixeira')
                     else:
                         os.system('cls||clear')
                         print('[A FAILURE HAS OCCURRED!]')
+                        time.sleep(4)
                         fail = True
                     
                 else: break
