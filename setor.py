@@ -34,12 +34,18 @@ client = mqtt.Client()
 ##################################### API #####################################
 FLASK_ENV = "development"
 FLASK_APP = "setor"
-port_api = 8080
+port_api = 8000
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('FLASK_ENV', silent=True)
 app.config.from_envvar('FLASK_APP', silent=True)
 
+
+#ADICAO
+@app.route('/teste')
+def reserveTcan2():
+    return "Hello World"
+#ADICAO
 
 # Função para retormar as x lixeiras mais criticas
 @app.route('/list-tcans')
@@ -113,7 +119,7 @@ def reserve_tcan():
                 # Caso a lixeira alvo esteja em outro setor, envia a mensagem para o setor correspondente.
                 # Mandar a mensagem de lixeira por lixeira, ou agrupar as lixeiras por setor, e enviar as requisições?
                 lixeira_id = item['id']
-                response = requests.get(f'http://127.0.0.1:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
+                response = requests.get(f'http://26.241.233.114:{coordPort}/reserve-tcan-for-coordinator?tcan={lixeira_id}')
     elif electionCounter >= 2:
         call_election()
         #teoricamente isso funciona, porque ele vai chamar a eleição e passar para o coordenador
@@ -121,14 +127,14 @@ def reserve_tcan():
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         headers = {'content-type': 'application/json'}
-        response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
+        response = requests.post(f'http://26.241.233.114:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
     else:
         #se ele não for o coordenador ele vai passar o request para quem está sendo o coordenador no momento
         for i in sectorList:
             if i['secID'] == coordinator:
                 coordPort = i['secPort']
         headers = {'content-type': 'application/json'}
-        response = requests.post(f'http://127.0.0.1:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
+        response = requests.post(f'http://26.241.233.114:{coordPort}/reserve-tcan', data = json.dumps(reserveTcanList), headers = headers)
         #falta ainda lidar com o response para retornar uma resposta para a interface
 
 # Rota que o coordenador chama para reservar a lixeira sem ter que fazer as validações de qual setor é o coordenador
@@ -172,7 +178,7 @@ def update_sector_list():
     
 def start_api():
     global port_api
-    app.run(port=port_api)
+    app.run(port=port_api, host='26.241.233.114')
 
 ##################################### BLOCO MQTT #####################################
 
@@ -293,7 +299,7 @@ def on_execution():
     sectorPriority = random.randint(0,100)
     new_port_api = int(port_api) + int(sectorID)
     sectorList_temp = None
-    sectorList_temp = requests.get(f'http://127.0.0.1:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={new_port_api}')
+    sectorList_temp = requests.get(f'http://26.241.233.114:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}&secPort={new_port_api}')
     # Talvez não espere a requisição ser finalizada para executar o código abaixo, por isso coloquei o IF
     if sectorList_temp:
         #TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
@@ -309,12 +315,12 @@ def call_election():
     for i in sectorList:
         port = i['port_api']
         #o setor que receber a mensagem vai resortear seu valor de prioridade e retornar no request
-        i['sectorPriority'] = requests.get(f'http://127.0.0.1:{port}/election')
+        i['sectorPriority'] = requests.get(f'http://26.241.233.114:{port}/election')
     #depois disso ele vai ordenar a nova lista de prioridade, atualizar o coordenador e enviar a nova lista para todos os outros setores
     sectorList.sort(key = lambda x: int(x['sectorPriority']))
     coordinator = sectorList[0]['sectorID']
     for i in sectorList:
         port = i['port_api']
         headers = {'content-type': 'application/json'}
-        response = request.post(f'http://127.0.0.1:{port}/update-sector-list', data = json.dumps(sectorList), headers = headers)
+        response = request.post(f'http://26.241.233.114:{port}/update-sector-list', data = json.dumps(sectorList), headers = headers)
         

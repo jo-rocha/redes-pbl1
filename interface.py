@@ -51,7 +51,7 @@ def addSector():
             # Quando quiser mandar um json pela rota é preciso adicionar esse headers e mandar o json dessa forma, igualando a data.
             headers = {'content-type': 'application/json'}
             #nesse caso eu vou tirar o json.dumps() porque já faz o dump na linha 36 para enviar de volta para o request do setor novo na linha 56
-            response = requests.post(f'http://127.0.0.1:{port}/update-sector-list',data=dumpedSectorList, headers=headers)
+            response = requests.post(f'http://26.241.233.114:{port}/update-sector-list',data=dumpedSectorList, headers=headers)
     
     return dumpedSectorList
 
@@ -77,7 +77,7 @@ def runInterface():
                     for i in truckList:
                         port = i['port_api']
                         number = i['requestNumber']
-                        response = requests.get(f'http://127.0.0.1:{port}/list-tcans?number={number}')
+                        response = requests.get(f'http://26.241.233.114:{port}/list-tcans?number={number}')
                         i['requestList'] = json.loads(response)
                     break
                 else:
@@ -97,7 +97,7 @@ def runInterface():
                         port = i['port_api']
                         toReserveList = i['toReserveList']
                         headers = {'content-type': 'application/json'}
-                        response = requests.post(f'http://127.0.0.1:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
+                        response = requests.post(f'http://26.241.233.114:{port}/reserve-tcan', data = json.dumps(toReserveList), headers=headers)
                         i['reservedList'] = json.loads(response)
                     break
                 else:
@@ -170,7 +170,7 @@ def runInterface():
                         print(f'{k}\n')
                     response = input('[SELECT THE SECTOR AND THE TRASHCAN YOU WANT TO EMPTY SEPARATING THEM BY ","]\n')
                     response = response.split(',')                
-                    emptyTcan = requests.get(f'http://127.0.0.1:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
+                    emptyTcan = requests.get(f'http://26.241.233.114:{port}/dump-tcan?sector={response[0]}&id={response[1]}')
                     emptyTcan = json.loads(emptyTcan)
                     if emptyTcan['message'] == 'Lixeira esvaziada com sucesso':
                         reservedList = truck['reservedList']

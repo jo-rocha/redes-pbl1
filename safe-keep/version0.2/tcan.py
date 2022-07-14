@@ -9,7 +9,7 @@ currentLoad = 10
 
 # Connecting to Server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 55556))
+client.connect(('26.241.233.114', 55556))
 
 def receive():
     global currentLoad

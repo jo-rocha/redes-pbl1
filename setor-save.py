@@ -136,7 +136,7 @@ def onExecution():
     sectorPriority = random.randint(0,100)
     #quando o setor executa, ele vai enviar uma mensagem avisando a interface que ele está vivo, e vai sortear o seu numero de prioridade
     #a interface vai entao retornar ao setor a lista de outros setores que estao vivos, se e que tem algum
-    sectorDict = requests.get(f'http://127.0.0.1:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}')#TEM QUE MUDR A PORTA
+    sectorDict = requests.get(f'http://26.241.233.114:5000/inform-get-sectors?secId={sectorID}&secPri={sectorPriority}')#TEM QUE MUDR A PORTA
     sectorDict = sectorDict.json()#TALVEZ TENHA QUE MUDAR ISSO, EU AINDA NAO TENHO CERTEZA SE ISSO JA DA O LOADS OU NAO
     coordinator = sectorDict[0]['sectorID']
 
